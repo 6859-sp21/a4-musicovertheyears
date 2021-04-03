@@ -120,10 +120,10 @@
 
     function layout(index) {
         const k = Math.sqrt(root.sum(d => d.values[index]).value / max);
-        const x = (1 - k) / 2 * width;
-        const y = (1 - k) / 2 * height;
-        return treemap.size([width * k, height * k])(root)
-            .each(d => (d.x0 += x, d.x1 += x, d.y0 += y, d.y1 += y))
+        // const x = (1 - k) / 2 * width;
+        // const y = (1 - k) / 2 * height;
+        return treemap.size([width, height])(root)
+            //.each(d => (d.x0 += x, d.x1 += x, d.y0 += y, d.y1 += y))
             .leaves();
     }
 
