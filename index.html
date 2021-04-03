@@ -65,29 +65,6 @@
         .attr("font-size", 10)
         .style("overflow", "visible");
 
-    const box = svg.append("g")
-        .selectAll("g")
-        .data(data.keys.map((key, i) => {
-            const value = root.sum(d => d.values[i]).value;
-            return {key, value, i, k: Math.sqrt(value / max)};
-        }).reverse())
-        .join("g")
-            .attr("transform", ({k}) => `translate(${(1 - k) / 2 * width},${(1 - k) / 2 * height})`)
-            .attr("opacity", ({i}) => i >= index ? 1 : 0)
-            .call(g => g.append("text")
-                .attr("y", -6)
-                .attr("fill", "#777")
-            .selectAll("tspan")
-            .data(({key, value}) => [key, ` ${formatNumber(value)}`])
-            .join("tspan")
-                .attr("font-weight", (d, i) => i === 0 ? "bold" : null)
-                .text(d => d))
-            .call(g => g.append("rect")
-                .attr("fill", "none")
-                .attr("stroke", "#ccc")
-                .attr("width", ({k}) => k * width)
-                .attr("height", ({k}) => k * height));
-
     const leaf = svg.append("g")
         .selectAll("g")
         .data(layout(index))
@@ -119,20 +96,13 @@
         .text(d => d.data.name);
 
     function layout(index) {
-        const k = Math.sqrt(root.sum(d => d.values[index]).value / max);
-        // const x = (1 - k) / 2 * width;
-        // const y = (1 - k) / 2 * height;
+        root.sum(d => d.values[index]);
         return treemap.size([width, height])(root)
-            //.each(d => (d.x0 += x, d.x1 += x, d.y0 += y, d.y1 += y))
             .leaves();
     }
 
     const chart = Object.assign(svg.node(), {
         update(index) {
-            box.transition()
-                .duration(duration)
-                .attr("opacity", ({i}) => i >= index ? 1 : 0);
-
             leaf.data(layout(index)).transition()
                 .duration(duration)
                 .ease(d3.easeLinear)
@@ -167,5 +137,40 @@
         .append('g')
         .attr('transform', 'translate(15,0)')
         .call(slider);
+
+    // Spotify
+    const CLIENT_ID = '4c0cd32422f74b43b67a28b04fbb295a';
+    const CLIENT_SECRET = '226344fed2034be3b14fb5a783574bcf';
+
+    var auth;
+    const authorize = async () => {
+        try {
+            const authResponse = await fetch('https://accounts.spotify.com/api/token', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)}`,
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: 'grant_type=client_credentials'
+            });
+            if (!authResponse.ok) {
+                throw Error;
+            }
+            auth = await authResponse.json();
+            setTimeout(authorize, auth.expires_in);
+            console.log(auth);
+        } catch (error) {
+            setTimeout(authorize, 100);
+        }
+    };
+
+    await authorize();
+    const artistResponse = await fetch(`https://api.spotify.com/v1/artists/0OdUWJ0sBjDrqHygGUXeCF`, {
+        headers: {
+            'Authorization': `Bearer ${auth.access_token}`
+        }
+    });
+    const artist = await artistResponse.json();
+    console.log(artist);
 
 </script>
