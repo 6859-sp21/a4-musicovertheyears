@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8" />
 <body>
+  <p id="value"></p>
   <div id="slider"></div>
   <div id="my_dataviz"></div>
 </body>
@@ -17,23 +18,14 @@
 
     //////////////// SET UP CHART ///////////////////
     // 1. Set Data var
-    var date = "1/1/2011"
-    var data = result[date]
-    //console.log(data)
+    //var date = "1/1/2011"
+    //var data = result[date]
+    //console.log(result)
 
     // 2. Setting up variables that describe our chart's space.
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
-    const width = 900 - margin.left - margin.right;
+    const width = 1200 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
-
-    // append the svg object to the body of the page
-    var svg = d3
-      .select("#my_dataviz")
-      .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     // Give the data to this cluster layout:
 
@@ -58,62 +50,172 @@
       return [uniqueArtistsObjectsArray, Object.getOwnPropertyNames(uniqueArtists), uniqueColors]
     }
 
-    var [uniqueArtists, uniqueArtistsArray, uniqueColors] = aggregateUniqueArtistsForWeek(data.artists)
+    // var [uniqueArtists, uniqueArtistsArray, uniqueColors] = aggregateUniqueArtistsForWeek(data.artists)
 
-    //console.log(uniqueArtists)
-    //console.log(uniqueArtistsArray)
-    //console.log(uniqueColors)
+    // //console.log(uniqueArtists)
+    // //console.log(uniqueArtistsArray)
+    // //console.log(uniqueColors)
 
-    var treeData = {"children": uniqueArtists,"name":"tree"}
-    //console.log(treeData)
+    // var treeData = {"children": uniqueArtists,"name":"tree"}
 
-    var root = d3.hierarchy(treeData).sum(function(d){return d.score}) // Here the size of each leave is given in the 'value' field in input data
+    // var root = d3.hierarchy(treeData).sum(function(d){return d.score}) // Here the size of each leave is given in the 'score' field in input data
 
-    // Then d3.treemap computes the position of each element of the hierarchy
-    d3.treemap()
-      .size([width, height])
-      .padding(2)
-      (root)
+    // // Then d3.treemap computes the position of each element of the hierarchy
+    // d3.treemap()
+    //   .size([width, height])
+    //   .padding(2)
+    //   (root)    
 
-    let color = d3.scaleOrdinal()
-      .domain(uniqueArtistsArray)
-      .range(uniqueColors);
+    // let color = d3.scaleOrdinal()
+    //   .domain(uniqueArtistsArray)
+    //   .range(uniqueColors);
+
+
+
+
+    // append the svg object to the body of the page
+    var svg = d3
+      .select("#my_dataviz")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     // use this information to add rectangles:
-    svg
-      .selectAll("rect")
-      .data(root.leaves())
-      .enter()
-      .append("rect")
-        .attr('x', function (d) { return d.x0; })
-        .attr('y', function (d) { return d.y0; })
-        .attr('width', function (d) { return d.x1 - d.x0; })
-        .attr('height', function (d) { return d.y1 - d.y0; })
-        .style("stroke", "black")
-        .style("fill", function (d) {  return color(d.data.artistId) })
+    // svg
+    //   .selectAll("rect")
+    //   .data(root.leaves())
+    //   .enter()
+    //   .append("rect")
+    //     .attr('x', function (d) { return d.x0; })
+    //     .attr('y', function (d) { return d.y0; })
+    //     .attr('width', function (d) { return d.x1 - d.x0; })
+    //     .attr('height', function (d) { return d.y1 - d.y0; })
+    //     .style("stroke", "black")
+    //     .style("fill", function (d) {  return color(d.data.artistId) })
 
     // and to add the text labels
-    svg
-      .selectAll("text")
-      .data(root.leaves())
-      .enter()
-      .append("text")
-        .attr("x", function(d){ return d.x0+5})    // +10 to adjust position (more right)
-        .attr("y", function(d){ return d.y0+20})    // +20 to adjust position (lower)
-        .text(function(d){ return d.data.score })
-        .attr("font-size", "15px")
-        .attr("fill", "white")
+    // svg
+    //   .selectAll("text")
+    //   .data(root.leaves())
+    //   .enter()
+    //   .append("text")
+    //     .attr("x", function(d){ return d.x0+5})    // +10 to adjust position (more right)
+    //     .attr("y", function(d){ return d.y0+20})    // +20 to adjust position (lower)
+    //     .text(function(d){ return d.data.score })
+    //     .attr("font-size", "15px")
+    //     .attr("fill", "white")
+
+
+    function updateTreemapFromDate(date) {
+      //const data = aggregate_Histo(rawData);
+      // console.log(data);
+      var data = result[date]
+
+      var [uniqueArtists, uniqueArtistsArray, uniqueColors] = aggregateUniqueArtistsForWeek(data.artists)
+
+      //console.log(uniqueArtists)
+      //console.log(uniqueArtistsArray)
+      //console.log(uniqueColors)
+
+      var treeData = {"children": uniqueArtists,"name":"tree"}
+
+      var root = d3.hierarchy(treeData).sum(function(d){return d.score}) // Here the size of each leave is given in the 'score' field in input data
+
+      // Then d3.treemap computes the position of each element of the hierarchy
+      d3.treemap()
+        .size([width, height])
+        .padding(2)
+        (root) 
+
+      let color = d3.scaleOrdinal()
+        .domain(uniqueArtistsArray)
+        .range(uniqueColors);
+
+
+      svg
+        .selectAll("rect")
+        .data(root.leaves())
+        .join(
+          enter => enter.append("rect")
+              .attr('x', function (d) { return d.x0; })
+              .attr('y', function (d) { return d.y0; })
+              .attr('width', function (d) { return d.x1 - d.x0; })
+              .attr('height', function (d) { return d.y1 - d.y0; })
+              .style("stroke", "black")
+              .style("fill", function (d) {  return color(d.data.artistId) }),
+          
+          update => update
+              .attr('x', function (d) { return d.x0; })
+              .attr('y', function (d) { return d.y0; })
+              .attr('width', function (d) { return d.x1 - d.x0; })
+              .attr('height', function (d) { return d.y1 - d.y0; })
+              .style("stroke", "black"),
+          
+          exit => exit.remove()
+              //.style("fill", function (d) {  return color(d.data.artistId) }),
+        );
+        
+
+
+      // g_hist.selectAll('rect')
+      //   .data(data)
+      //   // // join without animation:
+      //   // .join('rect')
+      //   //   .attr('x', margin_histo.left)
+      //   //   .attr('y', d => yScale_Histo(d.key))
+      //   //   .attr('width', d => xScale_Histo(d.value) - margin_histo.left)
+      //   //   .attr('height', yScale_Histo.bandwidth())
+      //   //   .style('fill', d => colorScale(d.key))
+      //   // // To animate the changes instead:
+      //   .join(
+      //     enter => enter.append("rect")
+      //         .attr("fill", d => colorScale(d.key))
+      //         .attr('x', margin_histo.left)
+      //         .attr('y', d => yScale_Histo(d.key))
+      //         .attr('height', yScale_Histo.bandwidth())
+      //       .call(enter => enter.transition().duration(1000)
+      //         .attr('width', d => xScale_Histo(d.value) - margin_histo.left)),
+      //     update => update
+      //         .attr("fill", d => colorScale(d.key))
+      //         .attr('y', d => yScale_Histo(d.key))
+      //         // .attr('width', d => xScale_Histo(d.value) - margin_histo.left),
+      //       .call(update => update.transition().duration(200)
+      //         .attr('width', d => xScale_Histo(d.value) - margin_histo.left)),
+      //     exit => exit
+      //       .call(exit => exit.transition().duration(1000)
+      //         .attr('width', d => xScale_Histo(0) - margin_histo.left)
+      //         .remove())
+      //   );
+
+    }
+
+
+
+
+
+
+    const dateRange = [...Array(474).keys()].map(function (d) {
+      return new Date(2011, 0, 1+(d*7));
+    });
 
     var slider = d3
       .sliderHorizontal()
-      .min(0)
-      .max(10)
-      .step(1)
-      .width(width-50)
-      .displayValue(false)
+      .min(d3.min(dateRange))
+      .max(d3.max(dateRange))
+      //.step(1000 * 60 * 60 * 24 * 365)
+      .step(1000 * 60 * 60 * 24 * 7)
+      .width(width-100)
+      .tickFormat(d3.timeFormat('%d %b %Y'))
+      .ticks(10)
+      //.default(0.015);
+      //.default(new Date(2019, 10, 3));
       .on("onchange", (val) => {
-        d3.select("#value").text(val);
-      });
+        var newDate = String(val.getMonth()+1) + "/" + String(val.getDate()) + "/" + String(val.getFullYear())
+        //console.log(data)
+        updateTreemapFromDate(newDate)
+      })
 
     d3.select("#slider")
       .append("svg")
@@ -122,5 +224,7 @@
       .append("g")
       .attr("transform", "translate(30,30)")
       .call(slider);
+
+    updateTreemapFromDate("1/1/2011")
   });
 </script>
