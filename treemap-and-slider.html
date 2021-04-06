@@ -130,8 +130,8 @@
       displayedArtists = root.children 
      // console.log(displayedArtists)
       svg
-        .selectAll("rect")
-        .data(displayedArtists, function(d, i) { return d.data.artistID })
+        .selectAll("image")
+        .data(displayedArtists, function(d, i) { console.log(d.data.artistID); return d.data.artistID })
         .join(
           enter => enter/*.append("rect")
               .attr('x', function (d) { return d.x0; })
@@ -142,27 +142,30 @@
               .append('svg:image')
               .attr('xlink:href', function (d) { return artists[d.data.artistID].images[0].url})
               
-              .attr("x", function (d) { return d.x0; })
-              .attr("y", function (d) { return d.y0; })
+              
               .attr("preserveAspectRatio", "xMinYMin slice")
               .call(enter => enter.transition().duration(duration)
               .attr('width', function (d) { return d.x1 - d.x0; })
               .attr('height', function (d) { return d.y1 - d.y0; })
+              .attr("x", function (d) { return d.x0; })
+              .attr("y", function (d) { return d.y0; })
               ),
               //.style("fill", function (d) {  return color(d.data.artistID) }),
           
           update => update
-              .attr('x', function (d) { return d.x0; })
-              .attr('y', function (d) { return d.y0; })
+              
               .call(update => update.transition().duration(duration)
               .attr('width', function (d) { return d.x1 - d.x0; })
               .attr('height', function (d) { return d.y1 - d.y0; })
+              .attr('x', function (d) { return d.x0; })
+              .attr('y', function (d) { return d.y0; })
               ),
               //.style("stroke", "black"),
           
           exit => exit.call(exit => exit.transition().duration(duration)
           .attr('width', 0)
           .attr('height', 0)
+
           )
           
           .remove()
@@ -224,7 +227,7 @@
         button.text("Play");
       } else {
         moving = true;
-        timer = setInterval(nextWeek, 500);
+        timer = setInterval(nextWeek, 2000);
         button.text("Pause");
       }
       console.log("Slider moving: " + moving);
