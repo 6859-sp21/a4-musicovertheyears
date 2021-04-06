@@ -11,16 +11,18 @@
 <script type="module">
   const weeksDataUrl =
     "https://raw.githubusercontent.com/6859-sp21/a4-musicovertheyears/main/weeks2010.json";
+  const artistsDataUrl =
+    "https://raw.githubusercontent.com/6859-sp21/a4-musicovertheyears/main/artists2010.json";
   const exampleDataUrl =
     "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_dendrogram_full.json";
 
-  d3.json(weeksDataUrl).then((result) => {
-
+  d3.json(weeksDataUrl).then((weeks) => {
+    d3.json(artistsDataUrl).then((artists) => {
     //////////////// SET UP CHART ///////////////////
     // 1. Set Data var
     //var date = "1/1/2011"
-    //var data = result[date]
-    //console.log(result)
+    //var data = weeks[date]
+    //console.log(weeks)
 
     // 2. Setting up variables that describe our chart's space.
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
@@ -32,46 +34,24 @@
     function aggregateUniqueArtistsForWeek(data) {
       let uniqueArtists = {}
       for (let i = 0; i < data.length; i++){
-        let artistId = data[i].artistID
-        if ( uniqueArtists.hasOwnProperty(artistId) ) {
-          uniqueArtists[artistId] += data[i].score
+        let artistID = data[i].artistID
+        let score = Math.max(0, 11-data[i].position) // MODIFY THIS LINE
+        if ( uniqueArtists.hasOwnProperty(artistID) ) {
+          uniqueArtists[artistID] += score
         } else {
-          uniqueArtists[artistId] = data[i].score
+          uniqueArtists[artistID] = score
         }
       }
 
       let uniqueArtistsObjectsArray = []
       let uniqueColors = []
       for (const property in uniqueArtists) {
-        uniqueArtistsObjectsArray.push({"artistId": property, "score": uniqueArtists[property]})
+        uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]})
         uniqueColors.push('#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0'))
       }
 
       return [uniqueArtistsObjectsArray, Object.getOwnPropertyNames(uniqueArtists), uniqueColors]
     }
-
-    // var [uniqueArtists, uniqueArtistsArray, uniqueColors] = aggregateUniqueArtistsForWeek(data.artists)
-
-    // //console.log(uniqueArtists)
-    // //console.log(uniqueArtistsArray)
-    // //console.log(uniqueColors)
-
-    // var treeData = {"children": uniqueArtists,"name":"tree"}
-
-    // var root = d3.hierarchy(treeData).sum(function(d){return d.score}) // Here the size of each leave is given in the 'score' field in input data
-
-    // // Then d3.treemap computes the position of each element of the hierarchy
-    // d3.treemap()
-    //   .size([width, height])
-    //   .padding(2)
-    //   (root)    
-
-    // let color = d3.scaleOrdinal()
-    //   .domain(uniqueArtistsArray)
-    //   .range(uniqueColors);
-
-
-
 
     // append the svg object to the body of the page
     var svg = d3
@@ -93,7 +73,7 @@
     //     .attr('width', function (d) { return d.x1 - d.x0; })
     //     .attr('height', function (d) { return d.y1 - d.y0; })
     //     .style("stroke", "black")
-    //     .style("fill", function (d) {  return color(d.data.artistId) })
+    //     .style("fill", function (d) {  return color(d.data.artistID) })
 
     // and to add the text labels
     // svg
@@ -111,13 +91,9 @@
     function updateTreemapFromDate(date) {
       //const data = aggregate_Histo(rawData);
       // console.log(data);
-      var data = result[date]
+      var data = weeks[date]
 
       var [uniqueArtists, uniqueArtistsArray, uniqueColors] = aggregateUniqueArtistsForWeek(data.artists)
-
-      //console.log(uniqueArtists)
-      //console.log(uniqueArtistsArray)
-      //console.log(uniqueColors)
 
       var treeData = {"children": uniqueArtists,"name":"tree"}
 
@@ -138,56 +114,32 @@
         .selectAll("rect")
         .data(root.leaves())
         .join(
-          enter => enter.append("rect")
+          enter => enter/*.append("rect")
               .attr('x', function (d) { return d.x0; })
               .attr('y', function (d) { return d.y0; })
               .attr('width', function (d) { return d.x1 - d.x0; })
               .attr('height', function (d) { return d.y1 - d.y0; })
-              .style("stroke", "black")
-              .style("fill", function (d) {  return color(d.data.artistId) }),
+              .style("stroke", "black")*/
+              .append('svg:image')
+              .attr('xlink:href', function (d) {return artists[d.data.artistID].images[0].url})
+              .attr('width', function (d) { return d.x1 - d.x0; })
+              .attr('height', function (d) { return d.y1 - d.y0; })
+              .attr("x", function (d) { return d.x0; })
+              .attr("y", function (d) { return d.y0; })
+              .attr("preserveAspectRatio", "xMinYMin slice"),
+              //.style("fill", function (d) {  return color(d.data.artistID) }),
           
           update => update
               .attr('x', function (d) { return d.x0; })
               .attr('y', function (d) { return d.y0; })
               .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; })
-              .style("stroke", "black"),
+              .attr('height', function (d) { return d.y1 - d.y0; }),
+              //.style("stroke", "black"),
           
           exit => exit.remove()
-              //.style("fill", function (d) {  return color(d.data.artistId) }),
+              //.style("fill", function (d) {  return color(d.data.artistID) }),
         );
         
-
-
-      // g_hist.selectAll('rect')
-      //   .data(data)
-      //   // // join without animation:
-      //   // .join('rect')
-      //   //   .attr('x', margin_histo.left)
-      //   //   .attr('y', d => yScale_Histo(d.key))
-      //   //   .attr('width', d => xScale_Histo(d.value) - margin_histo.left)
-      //   //   .attr('height', yScale_Histo.bandwidth())
-      //   //   .style('fill', d => colorScale(d.key))
-      //   // // To animate the changes instead:
-      //   .join(
-      //     enter => enter.append("rect")
-      //         .attr("fill", d => colorScale(d.key))
-      //         .attr('x', margin_histo.left)
-      //         .attr('y', d => yScale_Histo(d.key))
-      //         .attr('height', yScale_Histo.bandwidth())
-      //       .call(enter => enter.transition().duration(1000)
-      //         .attr('width', d => xScale_Histo(d.value) - margin_histo.left)),
-      //     update => update
-      //         .attr("fill", d => colorScale(d.key))
-      //         .attr('y', d => yScale_Histo(d.key))
-      //         // .attr('width', d => xScale_Histo(d.value) - margin_histo.left),
-      //       .call(update => update.transition().duration(200)
-      //         .attr('width', d => xScale_Histo(d.value) - margin_histo.left)),
-      //     exit => exit
-      //       .call(exit => exit.transition().duration(1000)
-      //         .attr('width', d => xScale_Histo(0) - margin_histo.left)
-      //         .remove())
-      //   );
 
     }
 
@@ -227,4 +179,5 @@
 
     updateTreemapFromDate("1/1/2011")
   });
+});
 </script>
