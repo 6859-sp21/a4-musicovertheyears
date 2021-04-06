@@ -115,7 +115,7 @@
 
       svg
         .selectAll("rect")
-        .data(root.leaves())
+        .data(root.leaves(), function(d, i) {return d.data.artistID })
         .join(
           enter => enter/*.append("rect")
               .attr('x', function (d) { return d.x0; })
@@ -186,7 +186,7 @@
         button.text("Play");
       } else {
         moving = true;
-        timer = setInterval(nextWeek, 100);
+        timer = setInterval(nextWeek, 500);
         button.text("Pause");
       }
       console.log("Slider moving: " + moving);
