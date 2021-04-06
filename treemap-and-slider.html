@@ -17,7 +17,7 @@
     "https://raw.githubusercontent.com/6859-sp21/a4-musicovertheyears/main/artists2010.json";
   const exampleDataUrl =
     "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_dendrogram_full.json";
-
+  const duration = 1000
   d3.json(weeksDataUrl).then((weeks) => {
     d3.json(artistsDataUrl).then((artists) => {
     //////////////// SET UP CHART ///////////////////
@@ -42,7 +42,7 @@
           uniqueArtists[artistID] += score
         } else {
           if(score > 0) {
-            console.log(artistID)
+            //console.log(artistID)
             uniqueArtists[artistID] = score
           }
         }
@@ -128,10 +128,10 @@
         .padding(2)
         (root) 
       displayedArtists = root.children 
-      console.log(displayedArtists)
+     // console.log(displayedArtists)
       svg
         .selectAll("rect")
-        .data(displayedArtists, function(d, i) {return d.data.artistID })
+        .data(displayedArtists, function(d, i) { return d.data.artistID })
         .join(
           enter => enter/*.append("rect")
               .attr('x', function (d) { return d.x0; })
@@ -141,21 +141,31 @@
               .style("stroke", "black")*/
               .append('svg:image')
               .attr('xlink:href', function (d) { return artists[d.data.artistID].images[0].url})
-              .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; })
+              
               .attr("x", function (d) { return d.x0; })
               .attr("y", function (d) { return d.y0; })
-              .attr("preserveAspectRatio", "xMinYMin slice"),
+              .attr("preserveAspectRatio", "xMinYMin slice")
+              .call(enter => enter.transition().duration(duration)
+              .attr('width', function (d) { return d.x1 - d.x0; })
+              .attr('height', function (d) { return d.y1 - d.y0; })
+              ),
               //.style("fill", function (d) {  return color(d.data.artistID) }),
           
           update => update
               .attr('x', function (d) { return d.x0; })
               .attr('y', function (d) { return d.y0; })
+              .call(update => update.transition().duration(duration)
               .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; }),
+              .attr('height', function (d) { return d.y1 - d.y0; })
+              ),
               //.style("stroke", "black"),
           
-          exit => exit.remove()
+          exit => exit.call(exit => exit.transition().duration(duration)
+          .attr('width', 0)
+          .attr('height', 0)
+          )
+          
+          .remove()
               //.style("fill", function (d) {  return color(d.data.artistID) }),
         );
     }
