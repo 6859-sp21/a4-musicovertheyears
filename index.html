@@ -7,6 +7,22 @@
   </div>
   <div id="my_dataviz"></div>
 </body>
+<style> /* set the CSS */
+  div.tooltip {
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue; 
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 5;
+    font-size: large;
+  }
+</style>
 <script src="https://d3js.org/d3.v6.js"></script>
 <script src="https://unpkg.com/d3-simple-slider"></script>
 
@@ -20,18 +36,16 @@
   const duration = 2000
   d3.json(weeksDataUrl).then((weeks) => {
     d3.json(artistsDataUrl).then((artists) => {
-    //////////////// SET UP CHART ///////////////////
-    // 1. Set Data var
-    //var date = "1/1/2011"
-    //var data = weeks[date]
-    //console.log(weeks)
+    
 
-    // 2. Setting up variables that describe our chart's space.
+    var tooltip = d3.select("#my_dataviz").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    // Setting up variables that describe our chart's space.
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
     const width = 1200 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
-
-    // Give the data to this cluster layout:
 
     function aggregateUniqueArtistsForWeek(data) {
       let uniqueArtists = {}
@@ -39,29 +53,21 @@
         let artistID = data[i].artistID
         let score = Math.pow(Math.max(0, (11-data[i].position)), 2) // MODIFY THIS LINE
         if ( uniqueArtists.hasOwnProperty(artistID) ) {
-          uniqueArtists[artistID] += score
+          uniqueArtists[artistID]["score"] += score
+          uniqueArtists[artistID]["songs"].push({"songTitle": data[i].song, "songPosition": data[i].position})
         } else {
           if(score > 0) {
             //console.log(artistID)
-            uniqueArtists[artistID] = score
+            uniqueArtists[artistID] = {"score": score, "songs":[{"songTitle": data[i].song, "songPosition": data[i].position}], "name":artists[artistID].name}
+            //uniqueArtists[] = [{songTitle: data[i]}]
           }
         }
       }
-      /*
-      const artistsList = Object.keys(artists)
       
-      for (let i=0; i<artistsList.length; i++) {
-        let myartist = artistsList[i]
-        if(!(myartist in uniqueArtists)) {
-          uniqueArtists[myartist] = 0
-        }
-      }*/
-
       let uniqueArtistsObjectsArray = []
-      let uniqueColors = []
+      
       for (const property in uniqueArtists) {
-        uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]})
-        uniqueColors.push('#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0'))
+        uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "songs": uniqueArtists[property]["songs"], "name": uniqueArtists[property]["name"]})
       }
 
       return uniqueArtistsObjectsArray
@@ -76,31 +82,6 @@
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // use this information to add rectangles:
-    // svg
-    //   .selectAll("rect")
-    //   .data(root.leaves())
-    //   .enter()
-    //   .append("rect")
-    //     .attr('x', function (d) { return d.x0; })
-    //     .attr('y', function (d) { return d.y0; })
-    //     .attr('width', function (d) { return d.x1 - d.x0; })
-    //     .attr('height', function (d) { return d.y1 - d.y0; })
-    //     .style("stroke", "black")
-    //     .style("fill", function (d) {  return color(d.data.artistID) })
-
-    // and to add the text labels
-    // svg
-    //   .selectAll("text")
-    //   .data(root.leaves())
-    //   .enter()
-    //   .append("text")
-    //     .attr("x", function(d){ return d.x0+5})    // +10 to adjust position (more right)
-    //     .attr("y", function(d){ return d.y0+20})    // +20 to adjust position (lower)
-    //     .text(function(d){ return d.data.score })
-    //     .attr("font-size", "15px")
-    //     .attr("fill", "white")
-
     var currentDate = "1/1/2011"
     var treeData = {"children": [],"name":"tree"}
    
@@ -111,7 +92,7 @@
     function updateTreemapFromDate(date) {
       //const data = aggregate_Histo(rawData);
       // console.log(data);
-      console.log(date)
+      //console.log(date)
       currentDate = date 
       var data = weeks[date]
 
@@ -131,7 +112,7 @@
      // console.log(displayedArtists)
       svg
         .selectAll("image")
-        .data(displayedArtists, function(d, i) { console.log(d.data.artistID); return d.data.artistID })
+        .data(displayedArtists, function(d, i) { /*console.log(d.data);*/ return d.data.artistID })
         .join(
           enter => enter/*.append("rect")
               .attr('x', function (d) { return d.x0; })
@@ -149,6 +130,8 @@
               .attr('height', function (d) { return d.y1 - d.y0; })
               .attr("x", function (d) { return d.x0; })
               .attr("y", function (d) { return d.y0; })
+              
+              
               ),
               //.style("fill", function (d) {  return color(d.data.artistID) }),
           
@@ -170,25 +153,38 @@
           
           .remove()
               //.style("fill", function (d) {  return color(d.data.artistID) }),
-        );
+        ).on("mouseover", function(event, d) {
+                //console.log(d.data)
+                tooltip.transition()
+                  .duration(200)
+                  .style("opacity", 1);
+                tooltip.html("Name: " + d.data.name +
+                 "<br/><br/> Songs:" + 
+                 d.data.songs.map((song, i) => {
+                  return `<br/><br/>Song Title: ${song.songTitle}<br/>Position: ${song.songPosition}`
+                }) 
+                )
+                  .style("left", (event.pageX) + "px")
+                  //.style("background", colorScale(d.cluster))
+                  .style("top", (event.pageY - 28) + "px")
+                  
+
+                d3.select(this)
+                  .attr("fill", "black")
+                  //.attr("d", symbol.size(64 * 4));
+              })
+              .on("mouseout", function(event, d) {
+                tooltip.transition()
+                  .duration(500)
+                  .style("opacity", 0);
+
+                d3.select(this)
+                    //.attr("fill", colorScale(d.cluster))
+                    //.attr("d", symbol.size(64));
+              });
     }
     updateTreemapFromDate(currentDate)
     
-
-      // Then d3.treemap computes the position of each element of the hierarchy
-      
-      //let color = d3.scaleOrdinal()
-      //  .domain(uniqueArtistsArray)
-      //  .range(uniqueColors);
-
-
-      
-        
-
-    
-
-
-
 
 
 
@@ -230,7 +226,7 @@
         timer = setInterval(nextWeek, 2000);
         button.text("Pause");
       }
-      console.log("Slider moving: " + moving);
+      //console.log("Slider moving: " + moving);
     })
 
     function nextWeek() {
@@ -238,14 +234,14 @@
       let val = new Date((new Date(currentDate).getTime()) + 7*24*60*60*1000);
       // make sure right day of week 
       val.setDate(val.getDate() + (6 - val.getDay()))
-      console.log(val.getDay())
+      //console.log(val.getDay())
       if (val > d3.max(dateRange)) {
         moving = false;
         val = d3.min(dateRange);
         
         clearInterval(timer);
         playButton.text("Play");
-        console.log("Slider moving: " + moving);
+        //console.log("Slider moving: " + moving);
       }
       slider.value(val)
       currentDate = String(val.getMonth()+1) + "/" + String(val.getDate()) + "/" + String(val.getFullYear())
