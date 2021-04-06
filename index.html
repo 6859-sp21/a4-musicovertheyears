@@ -102,7 +102,11 @@
       // Here the size of each leave is given in the 'score' field in input data
       root = d3.hierarchy(treeData).sum(function(d){
           return d.score
-      }) 
+      }).sort(
+        function(a,b){
+          return b.data.score - a.data.score
+        }
+      ) 
       d3.treemap()
         .tile(d3.treemapResquarify)
         .size([width, height])
