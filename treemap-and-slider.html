@@ -37,7 +37,7 @@
       let uniqueArtists = {}
       for (let i = 0; i < data.length; i++){
         let artistID = data[i].artistID
-        let score = Math.max(0, 11-data[i].position) // MODIFY THIS LINE
+        let score = Math.pow(Math.max(0, (11-data[i].position)), 2) // MODIFY THIS LINE
         if ( uniqueArtists.hasOwnProperty(artistID) ) {
           uniqueArtists[artistID] += score
         } else {
