@@ -120,10 +120,14 @@
       treeData = {"children": uniqueArtists,"name":"tree"}
       // Here the size of each leave is given in the 'score' field in input data
       root = d3.hierarchy(treeData).sum(function(d){
+        console.log(d)
           return d.score
+      }).sort(function(d) {
+        
+        return -1*d.data.score
       }) 
       d3.treemap()
-        .tile(d3.treemapResquarify)
+        .tile(d3.pack().size([width, height]))
         .size([width, height])
         .padding(2)
         (root) 
@@ -141,24 +145,26 @@
               .style("stroke", "black")*/
               .append('svg:image')
               .attr('xlink:href', function (d) { return artists[d.data.artistID].images[0].url})
-              
+              .style("border-radius", function (d) {return "50%"})
               
               .attr("preserveAspectRatio", "xMinYMin slice")
               .call(enter => enter.transition().duration(duration)
-              .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; })
-              .attr("x", function (d) { return d.x0; })
-              .attr("y", function (d) { return d.y0; })
+              .attr('width', function (d) { return d.r * 2; })
+              .attr('height', function (d) { return d.r * 2; })
+              .attr("x", function (d) { return d.x - d.r; })
+              .attr("y", function (d) { return d.y - d.r; })
+              
               ),
               //.style("fill", function (d) {  return color(d.data.artistID) }),
           
           update => update
               
               .call(update => update.transition().duration(duration)
-              .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; })
-              .attr('x', function (d) { return d.x0; })
-              .attr('y', function (d) { return d.y0; })
+              .attr('width', function (d) { return d.r * 2; })
+              .attr('height', function (d) { return d.r * 2; })
+              .attr('x', function (d) { return d.x - d.r; })
+              .attr('y', function (d) { return d.y - d.r; })
+  
               ),
               //.style("stroke", "black"),
           
@@ -227,7 +233,7 @@
         button.text("Play");
       } else {
         moving = true;
-        timer = setInterval(nextWeek, 2000);
+        timer = setInterval(nextWeek, 1000);
         button.text("Pause");
       }
       console.log("Slider moving: " + moving);
