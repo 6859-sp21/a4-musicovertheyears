@@ -2,7 +2,9 @@
 <meta charset="utf-8" />
 <body>
   <p id="value"></p>
-  <div id="slider"></div>
+  <div id="slider">
+    <button id="play-button">Play</button>
+  </div>
   <div id="my_dataviz"></div>
 </body>
 <script src="https://d3js.org/d3.v6.js"></script>
@@ -87,10 +89,11 @@
     //     .attr("font-size", "15px")
     //     .attr("fill", "white")
 
-
+    var currentDate = "1/1/2011"
     function updateTreemapFromDate(date) {
       //const data = aggregate_Histo(rawData);
       // console.log(data);
+      currentDate = date 
       var data = weeks[date]
 
       var [uniqueArtists, uniqueArtistsArray, uniqueColors] = aggregateUniqueArtistsForWeek(data.artists)
@@ -151,7 +154,10 @@
     const dateRange = [...Array(474).keys()].map(function (d) {
       return new Date(2011, 0, 1+(d*7));
     });
+   
 
+    var moving = false
+    var timer = 0 
     var slider = d3
       .sliderHorizontal()
       .min(d3.min(dateRange))
@@ -169,6 +175,42 @@
         updateTreemapFromDate(newDate)
       })
 
+    var playButton = d3.select("#play-button");
+    playButton
+    .on("click", function() {
+    var button = d3.select(this);
+    if (button.text() == "Pause") {
+        moving = false;
+        clearInterval(timer);
+        // timer = 0;
+        button.text("Play");
+      } else {
+        moving = true;
+        timer = setInterval(nextWeek, 100);
+        button.text("Pause");
+      }
+      console.log("Slider moving: " + moving);
+    })
+
+    function nextWeek() {
+      //console.log(currentDate)
+      let val = new Date((new Date(currentDate).getTime()) + 7*24*60*60*1000);
+      // make sure right day of week 
+      val.setDate(val.getDate() + (6 - val.getDay()))
+      console.log(val.getDay())
+      if (val > d3.max(dateRange)) {
+        moving = false;
+        val = d3.min(dateRange);
+        
+        clearInterval(timer);
+        playButton.text("Play");
+        console.log("Slider moving: " + moving);
+      }
+      currentDate = String(val.getMonth()+1) + "/" + String(val.getDate()) + "/" + String(val.getFullYear())
+      updateTreemapFromDate(currentDate)
+    }
+
+
     d3.select("#slider")
       .append("svg")
       .attr("width", width)
@@ -177,7 +219,7 @@
       .attr("transform", "translate(30,30)")
       .call(slider);
 
-    updateTreemapFromDate("1/1/2011")
+    updateTreemapFromDate(currentDate)
   });
 });
 </script>
