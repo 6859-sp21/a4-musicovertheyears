@@ -41,9 +41,21 @@
         if ( uniqueArtists.hasOwnProperty(artistID) ) {
           uniqueArtists[artistID] += score
         } else {
-          uniqueArtists[artistID] = score
+          if(score > 0) {
+            console.log(artistID)
+            uniqueArtists[artistID] = score
+          }
         }
       }
+      /*
+      const artistsList = Object.keys(artists)
+      
+      for (let i=0; i<artistsList.length; i++) {
+        let myartist = artistsList[i]
+        if(!(myartist in uniqueArtists)) {
+          uniqueArtists[myartist] = 0
+        }
+      }*/
 
       let uniqueArtistsObjectsArray = []
       let uniqueColors = []
@@ -52,7 +64,7 @@
         uniqueColors.push('#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0'))
       }
 
-      return [uniqueArtistsObjectsArray, Object.getOwnPropertyNames(uniqueArtists), uniqueColors]
+      return uniqueArtistsObjectsArray
     }
 
     // append the svg object to the body of the page
@@ -90,32 +102,36 @@
     //     .attr("fill", "white")
 
     var currentDate = "1/1/2011"
+    var treeData = {"children": [],"name":"tree"}
+   
+    // Here the size of each leave is given in the 'score' field in input data
+    var displayedArtists = []
+    var root;
+
     function updateTreemapFromDate(date) {
       //const data = aggregate_Histo(rawData);
       // console.log(data);
+      console.log(date)
       currentDate = date 
       var data = weeks[date]
 
-      var [uniqueArtists, uniqueArtistsArray, uniqueColors] = aggregateUniqueArtistsForWeek(data.artists)
+      var uniqueArtists = aggregateUniqueArtistsForWeek(data.artists)
 
-      var treeData = {"children": uniqueArtists,"name":"tree"}
-
-      var root = d3.hierarchy(treeData).sum(function(d){return d.score}) // Here the size of each leave is given in the 'score' field in input data
-
-      // Then d3.treemap computes the position of each element of the hierarchy
+      treeData = {"children": uniqueArtists,"name":"tree"}
+      // Here the size of each leave is given in the 'score' field in input data
+      root = d3.hierarchy(treeData).sum(function(d){
+          return d.score
+      }) 
       d3.treemap()
+        .tile(d3.treemapResquarify)
         .size([width, height])
         .padding(2)
         (root) 
-
-      let color = d3.scaleOrdinal()
-        .domain(uniqueArtistsArray)
-        .range(uniqueColors);
-
-
+      displayedArtists = root.children 
+      console.log(displayedArtists)
       svg
         .selectAll("rect")
-        .data(root.leaves(), function(d, i) {return d.data.artistID })
+        .data(displayedArtists, function(d, i) {return d.data.artistID })
         .join(
           enter => enter/*.append("rect")
               .attr('x', function (d) { return d.x0; })
@@ -124,7 +140,7 @@
               .attr('height', function (d) { return d.y1 - d.y0; })
               .style("stroke", "black")*/
               .append('svg:image')
-              .attr('xlink:href', function (d) {return artists[d.data.artistID].images[0].url})
+              .attr('xlink:href', function (d) { return artists[d.data.artistID].images[0].url})
               .attr('width', function (d) { return d.x1 - d.x0; })
               .attr('height', function (d) { return d.y1 - d.y0; })
               .attr("x", function (d) { return d.x0; })
@@ -142,9 +158,21 @@
           exit => exit.remove()
               //.style("fill", function (d) {  return color(d.data.artistID) }),
         );
+    }
+    updateTreemapFromDate(currentDate)
+    
+
+      // Then d3.treemap computes the position of each element of the hierarchy
+      
+      //let color = d3.scaleOrdinal()
+      //  .domain(uniqueArtistsArray)
+      //  .range(uniqueColors);
+
+
+      
         
 
-    }
+    
 
 
 
@@ -206,6 +234,7 @@
         playButton.text("Play");
         console.log("Slider moving: " + moving);
       }
+      slider.value(val)
       currentDate = String(val.getMonth()+1) + "/" + String(val.getDate()) + "/" + String(val.getFullYear())
       updateTreemapFromDate(currentDate)
     }
@@ -219,7 +248,7 @@
       .attr("transform", "translate(30,30)")
       .call(slider);
 
-    updateTreemapFromDate(currentDate)
+    
   });
 });
 </script>
