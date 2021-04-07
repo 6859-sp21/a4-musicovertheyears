@@ -27,7 +27,7 @@
   }
   .axis text,
   .slider text {
-    font-size: 20px;
+    font-size: 11px;
   }
 </style>
 <script src="https://d3js.org/d3.v6.js"></script>
@@ -192,7 +192,7 @@
       .step(1000 * 60 * 60 * 24 * 7)
       .width(width-120)
       .tickFormat(d3.timeFormat('%d %b %Y'))
-      .ticks(6)
+      .ticks(7)
       //.default(0.015);
       //.default(new Date(2019, 10, 3));
       .on("onchange", (val) => {
