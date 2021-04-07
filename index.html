@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+<!DOCTYPE html style="height: 100%">
 <meta charset="utf-8" />
-<body>
+<body style="height: 100%">
   <p id="value"></p>
   <div id="slider">
     <button id="play-button">Play</button>
   </div>
-  <div id="my_dataviz"></div>
+  <div id="my_dataviz" style="height: calc(100% - 150px)"></div>
 </body>
 <style> /* set the CSS */
   div.tooltip {
@@ -44,8 +44,7 @@
 
     // Setting up variables that describe our chart's space.
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
-    const width = 1200 - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
+  
 
     function aggregateUniqueArtistsForWeek(data) {
       let uniqueArtists = {}
@@ -77,8 +76,8 @@
     var svg = d3
       .select("#my_dataviz")
       .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("width", "100%")
+      .attr("height", "100%")
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -107,6 +106,9 @@
           return b.data.score - a.data.score
         }
       ) 
+      //console.log([window.innerWidth, window.innerHeight - 100])
+      const width = window.innerWidth - margin.left - margin.right;
+      const height = window.innerHeight - margin.top - margin.bottom - 150;
       d3.treemap()
         .tile(d3.treemapResquarify)
         .size([width, height])
@@ -196,6 +198,7 @@
       return new Date(2011, 0, 1+(d*7));
     });
    
+    let myWidth =  window.innerWidth - (margin.left + margin.right) - 150 
 
     var moving = false
     var timer = 0 
@@ -205,7 +208,7 @@
       .max(d3.max(dateRange))
       //.step(1000 * 60 * 60 * 24 * 365)
       .step(1000 * 60 * 60 * 24 * 7)
-      .width(width-100)
+      .width(myWidth)
       .tickFormat(d3.timeFormat('%d %b %Y'))
       .ticks(10)
       //.default(0.015);
@@ -255,7 +258,7 @@
 
     d3.select("#slider")
       .append("svg")
-      .attr("width", width)
+      .attr("width", myWidth)
       .attr("height", 100)
       .append("g")
       .attr("transform", "translate(30,30)")
