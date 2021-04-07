@@ -5,12 +5,12 @@
 <body>
   <h1>Weekly top artists from the Billboard Hot 100</h1>
   <p>For each week, we took the songs from that week's Billboard Hot 100 chart and gave each song a score equal to 100 minus its position on the chart. Each artist's score was then calculated as the sum of the scores of their songs on that week's chart.</p>
-  <div class="slider-container">
-    <button id="play-button">Play</button>
+  <div class="slider-container" style="height: 80px">
+     <button id="play-button">Play</button>
     <div id="slider">
     </div>
   </div>
-  <div id="my_dataviz" style="height: calc(100% - 150px)"></div>
+  <div id="my_dataviz" style="height: calc(100% - 200px)"></div>
 </body>
 <style> /* set the CSS */
   div.tooltip {
@@ -52,7 +52,7 @@
         .style("opacity", 0);
 
     // Setting up variables that describe our chart's space.
-    const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+    const margin = { top: 10, right: 10, bottom:10, left: 10 };
   
 
     function aggregateUniqueArtistsForWeek(data) {
@@ -116,8 +116,8 @@
         }
       ) 
       //console.log([window.innerWidth, window.innerHeight - 100])
-      const width = window.innerWidth - margin.left - margin.right;
-      const height = window.innerHeight - margin.top - margin.bottom - 200;
+      const width = window.innerWidth - margin.left - margin.right -  (25*2);
+      const height = window.innerHeight - margin.top - margin.bottom - 200 - (25*2);
       d3.treemap()
         .tile(d3.treemapResquarify)
         .size([width, height])
@@ -186,7 +186,7 @@
       return new Date(2011, 0, 1+(d*7));
     });
    
-    let myWidth =  window.innerWidth - (margin.left + margin.right) - 200
+    let myWidth =  window.innerWidth - (margin.left + margin.right) - 200 - (25*2)
 
     var moving = false
     var timer = 0 
