@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <meta charset="utf-8" />
+<link rel="stylesheet" href="./style.css">
 <body>
   <p id="value"></p>
-  <div id="slider">
+  <div class="slider-container">
     <button id="play-button">Play</button>
+    <div id="slider">
+    </div>
   </div>
   <div id="my_dataviz"></div>
 </body>
@@ -118,84 +121,62 @@
         .selectAll("image")
         .data(displayedArtists, function(d, i) { /*console.log(d.data);*/ return d.data.artistID })
         .join(
-          enter => enter/*.append("rect")
-              .attr('x', function (d) { return d.x0; })
-              .attr('y', function (d) { return d.y0; })
-              .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; })
-              .style("stroke", "black")*/
-              .append('svg:image')
+          enter => enter.append('svg:image')
               .attr('xlink:href', function (d) { return artists[d.data.artistID].images[0].url})
-              
-              
               .attr("preserveAspectRatio", "xMinYMin slice")
               .call(enter => enter.transition().duration(duration)
-              .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; })
-              .attr("x", function (d) { return d.x0; })
-              .attr("y", function (d) { return d.y0; })
-              
-              
-              ),
-              //.style("fill", function (d) {  return color(d.data.artistID) }),
-          
+                .attr('width', function (d) { return d.x1 - d.x0; })
+                .attr('height', function (d) { return d.y1 - d.y0; })
+                .attr("x", function (d) { return d.x0; })
+                .attr("y", function (d) { return d.y0; })),
+
           update => update
-              
               .call(update => update.transition().duration(duration)
-              .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; })
-              .attr('x', function (d) { return d.x0; })
-              .attr('y', function (d) { return d.y0; })
-              ),
-              //.style("stroke", "black"),
+                .attr('width', function (d) { return d.x1 - d.x0; })
+                .attr('height', function (d) { return d.y1 - d.y0; })
+                .attr('x', function (d) { return d.x0; })
+                .attr('y', function (d) { return d.y0; })),
           
-          exit => exit.call(exit => exit.transition().duration(duration)
-          .attr('width', 0)
-          .attr('height', 0)
-
-          )
-          
-          .remove()
-              //.style("fill", function (d) {  return color(d.data.artistID) }),
+          exit => exit
+            .call(exit => exit.transition().duration(duration)
+              .attr('width', 0)
+              .attr('height', 0))
+            .call(exit => exit.transition().delay(duration)
+              .remove())          
         ).on("mouseover", function(event, d) {
-                //console.log(d.data)
-                tooltip.transition()
-                  .duration(200)
-                  .style("opacity", 1);
-                tooltip.html("Name: " + d.data.name +
-                 "<br/><br/> Songs:" + 
-                 d.data.songs.map((song, i) => {
-                  return `<br/><br/>Song Title: ${song.songTitle}<br/>Position: ${song.songPosition}`
-                }) 
-                )
-                  .style("left", (event.pageX) + "px")
-                  //.style("background", colorScale(d.cluster))
-                  .style("top", (event.pageY - 28) + "px")
-                  
+          //console.log(d.data)
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", 1);
+          tooltip.html("Name: " + d.data.name +
+            "<br/><br/> Songs:" + 
+            d.data.songs.map((song, i) => {
+              return `<br/><br/>Song Title: ${song.songTitle}<br/>Position: ${song.songPosition}`
+            }))
+            .style("left", (event.pageX) + "px")
+            //.style("background", colorScale(d.cluster))
+            .style("top", (event.pageY - 28) + "px")
+            
+          d3.select(this)
+            .attr("fill", "black")
+            //.attr("d", symbol.size(64 * 4));
+        })
+        .on("mouseout", function(event, d) {
+          tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
 
-                d3.select(this)
-                  .attr("fill", "black")
-                  //.attr("d", symbol.size(64 * 4));
-              })
-              .on("mouseout", function(event, d) {
-                tooltip.transition()
-                  .duration(500)
-                  .style("opacity", 0);
-
-                d3.select(this)
-                    //.attr("fill", colorScale(d.cluster))
-                    //.attr("d", symbol.size(64));
-              });
+          d3.select(this)
+              //.attr("fill", colorScale(d.cluster))
+              //.attr("d", symbol.size(64));
+        });
     }
-    updateTreemapFromDate(currentDate)
     
-
-
+    updateTreemapFromDate(currentDate);          
 
     const dateRange = [...Array(474).keys()].map(function (d) {
       return new Date(2011, 0, 1+(d*7));
-    });
-   
+    });   
 
     var moving = false
     var timer = 0 
@@ -205,7 +186,7 @@
       .max(d3.max(dateRange))
       //.step(1000 * 60 * 60 * 24 * 365)
       .step(1000 * 60 * 60 * 24 * 7)
-      .width(width-100)
+      .width(width-120)
       .tickFormat(d3.timeFormat('%d %b %Y'))
       .ticks(10)
       //.default(0.015);
