@@ -2,7 +2,7 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="./style.css">
 <body>
-  <p id="value"></p>
+  
   <div class="slider-container">
     <button id="play-button">Play</button>
     <div id="slider">
@@ -152,10 +152,10 @@
           tooltip.transition()
             .duration(200)
             .style("opacity", 1);
-          tooltip.html("Name: " + d.data.name +
-            "<br/><br/> Songs:" + 
+          tooltip.html(d.data.name +
+            "" + 
             d.data.songs.map((song, i) => {
-              return `<br/><br/>Song Title: ${song.songTitle}<br/>Position: ${song.songPosition}`
+              return `<br/><br/>#${song.songPosition}: ${song.songTitle}`
             }))
             .style("left", (event.pageX) + "px")
             //.style("background", colorScale(d.cluster))
