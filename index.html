@@ -3,7 +3,8 @@
 
 <link rel="stylesheet" href="./style.css">
 <body>
-  
+  <h1>Weekly top artists from the Billboard Hot 100</h1>
+  <p>For each week, we took the songs from that week's Billboard Hot 100 chart and gave each song a score equal to 100 minus its position on the chart. Each artist's score was then calculated as the sum of the scores of their songs on that week's chart.</p>
   <div class="slider-container">
     <button id="play-button">Play</button>
     <div id="slider">
@@ -28,7 +29,7 @@
   }
   .axis text,
   .slider text {
-    font-size: 20px;
+    font-size: 11px;
   }
 </style>
 <script src="https://d3js.org/d3.v6.js"></script>
@@ -116,7 +117,7 @@
       ) 
       //console.log([window.innerWidth, window.innerHeight - 100])
       const width = window.innerWidth - margin.left - margin.right;
-      const height = window.innerHeight - margin.top - margin.bottom - 150;
+      const height = window.innerHeight - margin.top - margin.bottom - 200;
       d3.treemap()
         .tile(d3.treemapResquarify)
         .size([width, height])
@@ -178,7 +179,7 @@
               //.attr("d", symbol.size(64));
         });
     }
-    
+
     updateTreemapFromDate(currentDate);          
 
     const dateRange = [...Array(474).keys()].map(function (d) {
@@ -197,7 +198,7 @@
       .step(1000 * 60 * 60 * 24 * 7)
       .width(myWidth)
       .tickFormat(d3.timeFormat('%d %b %Y'))
-      .ticks(6)
+      .ticks(7)
       //.default(0.015);
       //.default(new Date(2019, 10, 3));
       .on("onchange", (val) => {
