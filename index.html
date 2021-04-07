@@ -2,7 +2,8 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="./style.css">
 <body>
-  
+  <h1>Weekly top artists from the Billboard Hot 100</h1>
+  <p>For each week, we took the songs from that week's Billboard Hot 100 chart and gave each song a score equal to 100 minus its position on the chart. Each artist's score was then calculated as the sum of the scores of their songs on that week's chart.</p>
   <div class="slider-container">
     <button id="play-button">Play</button>
     <div id="slider">
@@ -50,7 +51,7 @@
         .style("opacity", 0);
 
     // Setting up variables that describe our chart's space.
-    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+    const margin = { top: 0, right: 0, bottom: 0, left: 0 };
     const width = 1200 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
@@ -175,7 +176,7 @@
               //.attr("d", symbol.size(64));
         });
     }
-    
+
     updateTreemapFromDate(currentDate);          
 
     const dateRange = [...Array(474).keys()].map(function (d) {
