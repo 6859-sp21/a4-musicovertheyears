@@ -47,6 +47,7 @@
     d3.json(artistsDataUrl).then((artists) => {
     
 
+    
     var tooltip = d3.select("#my_dataviz").append("div")
         .attr("class", "tooltip")
         .style("opacity", 0);
@@ -98,12 +99,8 @@
     var root;
 
     function updateTreemapFromDate(date) {
-      //const data = aggregate_Histo(rawData);
-      // console.log(data);
-      //console.log(date)
       currentDate = date 
       var data = weeks[date]
-
       var uniqueArtists = aggregateUniqueArtistsForWeek(data.artists)
 
       treeData = {"children": uniqueArtists,"name":"tree"}
@@ -125,32 +122,128 @@
         (root) 
       displayedArtists = root.children 
      // console.log(displayedArtists)
-      svg
-        .selectAll("image")
+
+      let image = svg
+        .selectAll('g')
         .data(displayedArtists, function(d, i) { /*console.log(d.data);*/ return d.data.artistID })
         .join(
-          enter => enter.append('svg:image')
+          enter => {
+            // G IS THE GROUP OF IMAGE AND TEXT/RECTANGLE
+            let g = enter.append('g').attr("overflow", "hidden");
+            g.call(enter => enter.transition().duration(duration)
+            .attr('transform', function (d) { 
+              return "translate(" + d.x0 + "," + d.y0 + ")"
+            }))
+            // THE IMAGE
+            g.append("svg:image")
               .attr('xlink:href', function (d) { return artists[d.data.artistID].images[0].url})
               .attr("preserveAspectRatio", "xMinYMin slice")
+              .attr('x', 0)
+              .attr('y', 0)
               .call(enter => enter.transition().duration(duration)
-                .attr('width', function (d) { return d.x1 - d.x0; })
-                .attr('height', function (d) { return d.y1 - d.y0; })
-                .attr("x", function (d) { return d.x0; })
-                .attr("y", function (d) { return d.y0; })),
+              .attr('width', function (d) { return d.x1 - d.x0; })
+              .attr('height', function (d) { return d.y1 - d.y0; }))
+              // THE RECT
+           let rect =  g.append('rect')
+              .attr("fill", "#000000")
+              .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "20%"
+                            })
+              .attr('width', 0)
+              .attr('height', 0)
+              
+            rect.call(enter => enter.transition()
+              
+              .duration(duration)
+              .attr('width', function (d) { return d.x1-d.x0; })
+              .attr('height', "30px"))
+           
+              
+              
+              // THE TEXT
+            g.append('text')
+              .attr("x", function (d) { return 10; })
+              .attr("y", function (d) { return 20; })
+              .attr("opacity", "0%")
+              .attr("font-size", "24px")
+              .attr("fill", "white")
+              .text(function(d) {return artists[d.data.artistID].name})
+              .call(enter => enter.transition().delay(duration/2-500).duration(duration/2)
+              .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "100%"
+              })
+              
+              )
+             
+              
 
-          update => update
+            }
+              ,
+              
+
+          update => 
+            update
               .call(update => update.transition().duration(duration)
-                .attr('width', function (d) { return d.x1 - d.x0; })
-                .attr('height', function (d) { return d.y1 - d.y0; })
-                .attr('x', function (d) { return d.x0; })
-                .attr('y', function (d) { return d.y0; })),
+                .attr('transform', function (d) { 
+              return "translate(" + d.x0 + "," + d.y0 + ")"
+            }))
+
+            .call(update => update
+            .select("image")
+            .transition().duration(duration)
+            .attr('width', function (d) { return d.x1 - d.x0; })
+            .attr('height', function (d) { return d.y1 - d.y0; }))
+
+            .call(update => update
+            .select("rect")
+            .transition().duration(duration)
+            .attr('width', function (d) { return d.x1 - d.x0; })
+            .attr('height', "30px")
+            .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "20%"
+              })
+            )
+            .select("text")
+           // .attr("opacity", "0%")
+           .call(update => update
+            .transition().duration(duration)
+            .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "100%"
+              })
+            )
+            
+
+               // .attr('x', function (d) { return d.x0; })
+               // .attr('y', function (d) { return d.y0; })),
+          ,
           
-          exit => exit
-            .call(exit => exit.transition().duration(duration)
+          exit => {
+              exit.select("image").call(exit1 => exit1.transition().duration(duration)
               .attr('width', 0)
               .attr('height', 0))
-            .call(exit => exit.transition().delay(duration)
-              .remove())          
+
+              exit.select("rect").call(exit1 => exit1.transition().duration(duration)
+              .attr('width', "0px")
+              .attr('height', "0px"))
+
+              exit.select("text").call(exit1 => exit1.transition().duration(duration)
+              .attr('opacity', "0%"))
+           
+              exit.call(exit1 => exit1.transition().delay(duration)
+              .remove())   
+          }       
         ).on("mouseover", function(event, d) {
           //console.log(d.data)
           tooltip.transition()
@@ -179,7 +272,6 @@
               //.attr("d", symbol.size(64));
         });
     }
-
     updateTreemapFromDate(currentDate);          
 
     const dateRange = [...Array(474).keys()].map(function (d) {
