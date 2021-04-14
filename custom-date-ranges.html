@@ -6,7 +6,7 @@
   <h1>Weekly top artists from the Billboard Hot 100</h1>
   <p>For each week, we took the songs from that week's Billboard Hot 100 chart and gave each song a score equal to 100 minus its position on the chart. Each artist's score was then calculated as the sum of the scores of their songs on that week's chart.</p>
   <div class="slider-container" style="height: 80px">
-     
+    <button id="play-button">Play</button>
      
     <div id="slider">
     </div>
@@ -58,35 +58,6 @@
 
     // Setting up variables that describe our chart's space.
     const margin = { top: 10, right: 10, bottom:10, left: 10 };
-  
-
-    function aggregateUniqueArtistsForWeek(data) {
-      let uniqueArtists = {}
-      
-      for (let i = 0; i < data.length; i++) {
-        let artistID = data[i].artistID
-        let score = Math.pow(Math.max(0, (11-data[i].position)), 2) // MODIFY THIS LINE
-        if ( uniqueArtists.hasOwnProperty(artistID) ) {
-          uniqueArtists[artistID]["score"] += score
-          uniqueArtists[artistID]["songs"].push({"songTitle": data[i].song, "songPosition": data[i].position})
-        } else {
-          if(score > 0) {
-            //console.log(artistID)
-            uniqueArtists[artistID] = {"score": score, "songs":[{"songTitle": data[i].song, "songPosition": data[i].position}], "name":artists[artistID].name}
-            //uniqueArtists[] = [{songTitle: data[i]}]
-          }
-        }
-        
-      }
-      
-      let uniqueArtistsObjectsArray = []
-      
-      for (const property in uniqueArtists) {
-        uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "songs": uniqueArtists[property]["songs"], "name": uniqueArtists[property]["name"]})
-      }
-
-      return uniqueArtistsObjectsArray
-    }
 
     // append the svg object to the body of the page
     var svg = d3
@@ -104,190 +75,9 @@
     var displayedArtists = []
     var root;
 
-    function updateTreemapFromDate(date) {
-      currentDates[0] = date 
-      currentDates[1] = date
-      var data = weeks[date]
-      var res = aggregateUniqueArtistsForWeek(data.artists)
-      var uniqueArtists = res
-      
-      treeData = {"children": uniqueArtists,"name":"tree"}
-      // Here the size of each leave is given in the 'score' field in input data
-      root = d3.hierarchy(treeData).sum(function(d){
-          return d.score
-      }).sort(
-        function(a,b){
-          return b.data.score - a.data.score
-        }
-      ) 
-      //console.log([window.innerWidth, window.innerHeight - 100])
-      const width = window.innerWidth - margin.left - margin.right -  (25*2);
-      const height = window.innerHeight - margin.top - margin.bottom - 200 - (25*2);
-      d3.treemap()
-        .tile(d3.treemapResquarify)
-        .size([width, height])
-        .padding(2)
-        (root) 
-      displayedArtists = root.children 
-     // console.log(displayedArtists)
-
-      let image = svg
-        .selectAll('g')
-        .data(displayedArtists, function(d, i) { /*console.log(d.data);*/ return d.data.artistID })
-        .join(
-          enter => {
-            // G IS THE GROUP OF IMAGE AND TEXT/RECTANGLE
-            let g = enter.append('g').attr("overflow", "hidden");
-            g.call(enter => enter.transition().duration(duration)
-            .attr('transform', function (d) { 
-              return "translate(" + d.x0 + "," + d.y0 + ")"
-            }))
-            // THE IMAGE
-            g.append("svg:image")
-              .attr('xlink:href', function (d) { let arr = artists[d.data.artistID].images; return arr[0] ? arr[0].url : ""})
-              .attr("preserveAspectRatio", "xMinYMin slice")
-              .attr('x', 0)
-              .attr('y', 0)
-              .call(enter => enter.transition().duration(duration)
-              .attr('width', function (d) { return d.x1 - d.x0; })
-              .attr('height', function (d) { return d.y1 - d.y0; }))
-              // .on("mouseover", function(event, d) {
-          //console.log(d.data)
-          // tooltip.transition()
-          //   .duration(200)
-          //   .style("opacity", 1);
-          // tooltip.html(d.data.name +
-          //   "" + 
-          //   d.data.songs.map((song, i) => {
-          //     return `<br/><br/>#${song.songPosition}: ${song.songTitle}`
-          //   }))
-          //   .style("left", (event.pageX) + "px")
-          //   //.style("background", colorScale(d.cluster))
-          //   .style("top", (event.pageY - 28) + "px")
-            
-          // d3.select(this)
-          //   .attr("fill", "black")
-            //.attr("d", symbol.size(64 * 4));
-        // })
-        // .on("mouseout", function(event, d) {
-        //   tooltip.transition()
-        //     .duration(500)
-        //     .style("opacity", 0);
-
-          // d3.select(this)
-              //.attr("fill", colorScale(d.cluster))
-              //.attr("d", symbol.size(64));
-        // });
-              // THE RECT
-           let rect =  g.append('rect')
-              .attr("fill", "#000000")
-              .attr("opacity", function(d) {
-                if(d.y1-d.y0 < 60) {
-                  return "0%"
-                }
-                return "20%"
-                            })
-              
-              
-            rect.call(enter => enter.transition()
-               .attr('width', 0)
-              .attr('height', 0)
-              .duration(duration)
-              .attr('width', function (d) { return d.x1-d.x0; })
-              .attr('height', 30))
-           
-              
-              
-              // THE TEXT
-            g.append('text')
-              .attr("x", function (d) { return 10; })
-              .attr("y", function (d) { return 20; })
-              .attr("font-size", "24px")
-              .attr("fill", "white")
-              .text(function(d) {return artists[d.data.artistID].name})
-              .call(enter => enter.transition()
-              .attr("opacity", "0%")
-              .delay(duration/2-500).duration(duration/2)
-              .attr("opacity", function(d) {
-                if(d.y1-d.y0 < 60) {
-                  return "0%"
-                }
-                return "100%"
-              })
-              
-              )
-             
-              
-
-            }
-              ,
-              
-
-          update => 
-            update
-              .call(update => update.transition().duration(duration)
-                .attr('transform', function (d) { 
-              return "translate(" + d.x0 + "," + d.y0 + ")"
-            }))
-
-            .call(update => update
-            .select("image")
-            .transition().duration(duration)
-            .attr('width', function (d) { return d.x1 - d.x0; })
-            .attr('height', function (d) { return d.y1 - d.y0; }))
-
-            .call(update => update
-            .select("rect")
-            .transition().duration(duration)
-            .attr('width', function (d) { return d.x1 - d.x0; })
-            .attr('height', 30)
-            .attr("opacity", function(d) {
-                if(d.y1-d.y0 < 60) {
-                  return "0%"
-                }
-                return "20%"
-              })
-            )
-            .select("text")
-           // .attr("opacity", "0%")
-           .call(update => update
-            .transition().duration(duration)
-            .attr("opacity", function(d) {
-                if(d.y1-d.y0 < 60) {
-                  return "0%"
-                }
-                return "100%"
-              })
-            )
-            
-
-               // .attr('x', function (d) { return d.x0; })
-               // .attr('y', function (d) { return d.y0; })),
-          ,
-          
-          exit => {
-              exit.select("image").call(exit1 => exit1.transition().duration(duration)
-              .attr('width', 0)
-              .attr('height', 0))
-
-              exit.select("rect").call(exit1 => exit1.transition().duration(duration)
-              .attr('width', 0)
-              .attr('height', 0)
-              .attr('opacity', "0%"))
-
-              exit.select("text").call(exit1 => exit1.transition().duration(duration)
-              .attr('opacity', "0%"))
-           
-              exit.call(exit1 => exit1.transition().delay(duration)
-              .remove())   
-          }       
-        )
-        
-        
-    }
-
     function aggregateUniqueArtistsForDateRange(startDate, endDate) {
         let uniqueArtists = {}
+        let uniqueSongs = {}
         let currentDate = startDate
         
         while ( currentDate !== endDate ) {
@@ -299,53 +89,78 @@
                 let score = Math.pow(Math.max(0, (11-data[i].position)), 2) // MODIFY THIS LINE
                 if ( uniqueArtists.hasOwnProperty(artistID) ) {
                     uniqueArtists[artistID]["score"] += score
-                    //uniqueArtists[artistID]["songs"].push({"songTitle": data[i].song, "songPosition": data[i].position})
+                    
+                    if ( uniqueArtists[artistID]["songs"].hasOwnProperty(data[i].song) ) {
+                        uniqueArtists[artistID]["songs"][data[i].song] += score
+                    } else {
+                        if(score > 0) {
+                            uniqueArtists[artistID]["songs"][data[i].song] = score
+                        }
+                    }
                 } else {
                     if(score > 0) {
-                    //console.log(artistID)
-                    //uniqueArtists[artistID] = {"score": score, "songs":[{"songTitle": data[i].song, "songPosition": data[i].position}], "name":artists[artistID].name}
-                    uniqueArtists[artistID] = {"score": score, "name":artists[artistID].name}
-                    //uniqueArtists[] = [{songTitle: data[i]}]
+                        //console.log(artistID)
+                        uniqueArtists[artistID] = {"score": score, "songs": {}, "name":artists[artistID].name}
+                        uniqueArtists[artistID]["songs"][data[i].song] = score
+                        //uniqueArtists[artistID] = {"score": score, "name":artists[artistID].name}
+                        //uniqueArtists[] = [{songTitle: data[i]}]
+                    }
+                }
+
+                if ( uniqueSongs.hasOwnProperty(data[i].song) ) {
+                    uniqueSongs[data[i].song] += score
+                } else {
+                    if(score > 0) {
+                        uniqueSongs[data[i].song] = score
                     }
                 }
                 
             }
-
+            
             // update current date to be a week later
             let nextWeekDateObject = new Date((new Date(currentDate).getTime()) + 7*24*60*60*1000);
             // make sure correct day of week
             nextWeekDateObject.setDate(nextWeekDateObject.getDate() + (6 - nextWeekDateObject.getDay()))
             let nextWeekDateString = String(nextWeekDateObject.getMonth()+1) + "/" + String(nextWeekDateObject.getDate()) + "/" + String(nextWeekDateObject.getFullYear())
-            currentDate = nextWeekDateString
-
-            
+            currentDate = nextWeekDateString  
         }
         
+        
         let uniqueArtistsObjectsArray = []
-      
         for (const property in uniqueArtists) {
-            //uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "songs": uniqueArtists[property]["songs"], "name": uniqueArtists[property]["name"]})
-            uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "name": uniqueArtists[property]["name"]})
+            uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "songs": uniqueArtists[property]["songs"], "name": uniqueArtists[property]["name"]})
+            //uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "name": uniqueArtists[property]["name"]})
         }
 
-        return uniqueArtistsObjectsArray
+        let uniqueSongsObjectsArray = []
+        for (const property in uniqueSongs) {
+            uniqueSongsObjectsArray.push({"song":property, "score":uniqueSongs[property]})
+        }
 
+        return [uniqueArtistsObjectsArray, uniqueSongsObjectsArray]
     }
 
     function updateTreemapFromDateRange(startDate, endDate) {
       currentDates[0] = startDate 
       currentDates[1] = endDate
-      var res = aggregateUniqueArtistsForDateRange(startDate, endDate).sort(
+      var [uniqueArtists, uniqueSongs] = aggregateUniqueArtistsForDateRange(startDate, endDate)
+      
+      uniqueArtists.sort(
           function(a,b){
               return b.score - a.score
           }
       )
-      if (res.length > 15) {
-          res = res.slice(0, 15)
+      if (uniqueArtists.length > 15) {
+          uniqueArtists = uniqueArtists.slice(0, 15)
       }
-      console.log(res)
+
+      uniqueSongs.sort(
+          function(a,b){
+              return b.score - a.score
+          }
+      )
+      //console.log(uniqueSongs)
       
-      var uniqueArtists = res
 
       treeData = {"children": uniqueArtists,"name":"tree"}
       // Here the size of each leave is given in the 'score' field in input data
@@ -521,7 +336,7 @@
         
         
     }
-    //updateTreemapFromDateRange(currentDates);          
+    updateTreemapFromDateRange(currentDates[0], currentDates[1]);          
 
     const dateRange = [...Array(474).keys()].map(function (d) {
       return new Date(2011, 0, 1+(d*7));
@@ -530,6 +345,8 @@
    
     let myWidth =  window.innerWidth - (margin.left + margin.right) - (30)- (25*2) 
   
+    var moving = false
+    var timer = 0 
     var slider = d3
       .sliderBottom()
       .min(d3.min(dateRange))
@@ -546,19 +363,62 @@
         var newStartDate = new Date(val[0])
         var newEndDate = new Date(val[1])
         
-        if (newStartDate.toDateString() === newEndDate.toDateString()) {
-            var newDateString = String(newStartDate.getMonth()+1) + "/" + String(newStartDate.getDate()) + "/" + String(newStartDate.getFullYear())
-            updateTreemapFromDate(newDateString)
-        } else {
-            var newStartDateString = String(newStartDate.getMonth()+1) + "/" + String(newStartDate.getDate()) + "/" + String(newStartDate.getFullYear())
-            var newEndDateString = String(newEndDate.getMonth()+1) + "/" + String(newEndDate.getDate()) + "/" + String(newEndDate.getFullYear())
-            updateTreemapFromDateRange(newStartDateString, newEndDateString)
-        }
-        
+        var newStartDateString = String(newStartDate.getMonth()+1) + "/" + String(newStartDate.getDate()) + "/" + String(newStartDate.getFullYear())
+        var newEndDateString = String(newEndDate.getMonth()+1) + "/" + String(newEndDate.getDate()) + "/" + String(newEndDate.getFullYear())
+        updateTreemapFromDateRange(newStartDateString, newEndDateString)
       })
 
     
+    var playButton = d3.select("#play-button");
+    playButton
+    .on("click", function() {
+        var button = d3.select(this);
+        
+        if (button.text() == "Pause") {
+            moving = false;
+            clearInterval(timer);
+            timer = 0;
+            button.text("Play")
+            // clearInterval(musicTimeout)
+            // document.getElementById('vid').pause();
+        } else {
+            moving = true;
+            timer = setInterval(nextWeek, 2000);
+            button.text("Pause");
+            // clearInterval(musicTimeout)
+            // musicTimeout = setInterval(() => {
+            // document.getElementById('vid').load();
+            // document.getElementById('vid').play()
+            // }, 30000)
+            // document.getElementById('vid').load();
+            // document.getElementById('vid').play()
+        }
+        console.log("Slider moving: " + moving);
+    })
 
+    function nextWeek() {
+        //console.log(currentDate)
+        let nextStartDate = new Date((new Date(currentDates[0]).getTime()) + 7*24*60*60*1000);
+        // make sure right day of week 
+        nextStartDate.setDate(nextStartDate.getDate() + (6 - nextStartDate.getDay()))
+        let nextEndDate = new Date((new Date(currentDates[1]).getTime()) + 7*24*60*60*1000);
+        // make sure right day of week 
+        nextEndDate.setDate(nextEndDate.getDate() + (6 - nextEndDate.getDay()))
+        //console.log(val.getDay())
+        if (nextEndDate > d3.max(dateRange)) {
+            moving = false;
+            //nextStartDate = d3.min(dateRange);
+            
+            clearInterval(timer);
+            playButton.text("Play");
+            //console.log("Slider moving: " + moving);
+        } else {
+            slider.value([nextStartDate, nextEndDate])
+            currentDates = [String(nextStartDate.getMonth()+1) + "/" + String(nextStartDate.getDate()) + "/" + String(nextStartDate.getFullYear()), String(nextEndDate.getMonth()+1) + "/" + String(nextEndDate.getDate()) + "/" + String(nextEndDate.getFullYear())]
+            updateTreemapFromDateRange(currentDates[0], currentDates[1])
+        }
+        
+    }
     
 
 
