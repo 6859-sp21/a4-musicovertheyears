@@ -136,7 +136,7 @@
             }))
             // THE IMAGE
             g.append("svg:image")
-              .attr('xlink:href', function (d) { let arr = artists[d.data.artistID].images; return arr[0].url})
+              .attr('xlink:href', function (d) { let arr = artists[d.data.artistID].images; return arr[0] ? arr[0].url : ""})
               .attr("preserveAspectRatio", "xMinYMin slice")
               .attr('x', 0)
               .attr('y', 0)
