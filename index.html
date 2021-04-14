@@ -7,9 +7,14 @@
   <p>For each week, we took the songs from that week's Billboard Hot 100 chart and gave each song a score equal to 100 minus its position on the chart. Each artist's score was then calculated as the sum of the scores of their songs on that week's chart.</p>
   <div class="slider-container" style="height: 80px">
      <button id="play-button">Play</button>
+     
     <div id="slider">
     </div>
+    
   </div>
+  <audio id="vid">
+    <source src="https://p.scdn.co/mp3-preview/25eb644e3ec8a11d0ad4876e266e56a9174b91fe?cid=4c0cd32422f74b43b67a28b04fbb295a" type="audio/mp3" id="vid_source" />
+  </audio>
   <div id="my_dataviz" style="height: calc(100% - 200px)"></div>
 </body>
 <style> /* set the CSS */
@@ -59,6 +64,10 @@
 
     function aggregateUniqueArtistsForWeek(data) {
       let uniqueArtists = {}
+      let topSongURL = "" 
+      let topScore = -1;
+      let topArtist = ""
+      let topPos = 1000
       for (let i = 0; i < data.length; i++){
         let artistID = data[i].artistID
         let score = Math.pow(Math.max(0, (11-data[i].position)), 2) // MODIFY THIS LINE
@@ -72,6 +81,17 @@
             //uniqueArtists[] = [{songTitle: data[i]}]
           }
         }
+        if(uniqueArtists[artistID] && (artistID != topArtist && (uniqueArtists[artistID]["score"] > topScore))) {
+          topScore = uniqueArtists[artistID]["score"] 
+          topSongURL = data[i].audio
+          topArtist = artistID
+          topPos = data[i].position
+        } else if(uniqueArtists[artistID] && ((uniqueArtists[artistID]["score"] > topScore))) {
+          if(data[i].position < topPos) {
+            topPos = data[i].position 
+            topSongURL = data[i].audio
+          }
+        }
       }
       
       let uniqueArtistsObjectsArray = []
@@ -80,7 +100,7 @@
         uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "songs": uniqueArtists[property]["songs"], "name": uniqueArtists[property]["name"]})
       }
 
-      return uniqueArtistsObjectsArray
+      return [uniqueArtistsObjectsArray, topSongURL]
     }
 
     // append the svg object to the body of the page
@@ -102,8 +122,9 @@
     function updateTreemapFromDate(date) {
       currentDate = date 
       var data = weeks[date]
-      var uniqueArtists = aggregateUniqueArtistsForWeek(data.artists)
-      //console.log(uniqueArtists)
+      var res = aggregateUniqueArtistsForWeek(data.artists)
+      var uniqueArtists = res[0] 
+      var topSongURL = res[1]
 
       treeData = {"children": uniqueArtists,"name":"tree"}
       // Here the size of each leave is given in the 'score' field in input data
@@ -138,13 +159,40 @@
             }))
             // THE IMAGE
             g.append("svg:image")
-              .attr('xlink:href', function (d) { return artists[d.data.artistID].images[0].url})
+              .attr('xlink:href', function (d) { let arr = artists[d.data.artistID].images; return arr[0] ? arr[0].url : ""})
               .attr("preserveAspectRatio", "xMinYMin slice")
               .attr('x', 0)
               .attr('y', 0)
               .call(enter => enter.transition().duration(duration)
               .attr('width', function (d) { return d.x1 - d.x0; })
               .attr('height', function (d) { return d.y1 - d.y0; }))
+              .on("mouseover", function(event, d) {
+          //console.log(d.data)
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", 1);
+          tooltip.html(d.data.name +
+            "" + 
+            d.data.songs.map((song, i) => {
+              return `<br/><br/>#${song.songPosition}: ${song.songTitle}`
+            }))
+            .style("left", (event.pageX) + "px")
+            //.style("background", colorScale(d.cluster))
+            .style("top", (event.pageY - 28) + "px")
+            
+          d3.select(this)
+            .attr("fill", "black")
+            //.attr("d", symbol.size(64 * 4));
+        })
+        .on("mouseout", function(event, d) {
+          tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
+
+          d3.select(this)
+              //.attr("fill", colorScale(d.cluster))
+              //.attr("d", symbol.size(64));
+        });
               // THE RECT
            let rect =  g.append('rect')
               .attr("fill", "#000000")
@@ -154,14 +202,14 @@
                 }
                 return "20%"
                             })
-              .attr('width', 0)
-              .attr('height', 0)
+              
               
             rect.call(enter => enter.transition()
-              
+               .attr('width', 0)
+              .attr('height', 0)
               .duration(duration)
               .attr('width', function (d) { return d.x1-d.x0; })
-              .attr('height', "30px"))
+              .attr('height', 30))
            
               
               
@@ -169,11 +217,12 @@
             g.append('text')
               .attr("x", function (d) { return 10; })
               .attr("y", function (d) { return 20; })
-              .attr("opacity", "0%")
               .attr("font-size", "24px")
               .attr("fill", "white")
               .text(function(d) {return artists[d.data.artistID].name})
-              .call(enter => enter.transition().delay(duration/2-500).duration(duration/2)
+              .call(enter => enter.transition()
+              .attr("opacity", "0%")
+              .delay(duration/2-500).duration(duration/2)
               .attr("opacity", function(d) {
                 if(d.y1-d.y0 < 60) {
                   return "0%"
@@ -206,7 +255,7 @@
             .select("rect")
             .transition().duration(duration)
             .attr('width', function (d) { return d.x1 - d.x0; })
-            .attr('height', "30px")
+            .attr('height', 30)
             .attr("opacity", function(d) {
                 if(d.y1-d.y0 < 60) {
                   return "0%"
@@ -237,8 +286,9 @@
               .attr('height', 0))
 
               exit.select("rect").call(exit1 => exit1.transition().duration(duration)
-              .attr('width', "0px")
-              .attr('height', "0px"))
+              .attr('width', 0)
+              .attr('height', 0)
+              .attr('opacity', "0%"))
 
               exit.select("text").call(exit1 => exit1.transition().duration(duration)
               .attr('opacity', "0%"))
@@ -246,33 +296,15 @@
               exit.call(exit1 => exit1.transition().delay(duration)
               .remove())   
           }       
-        ).on("mouseover", function(event, d) {
-          //console.log(d.data)
-          tooltip.transition()
-            .duration(200)
-            .style("opacity", 1);
-          tooltip.html(d.data.name +
-            "" + 
-            d.data.songs.map((song, i) => {
-              return `<br/><br/>#${song.songPosition}: ${song.songTitle}`
-            }))
-            .style("left", (event.pageX) + "px")
-            //.style("background", colorScale(d.cluster))
-            .style("top", (event.pageY - 28) + "px")
-            
-          d3.select(this)
-            .attr("fill", "black")
-            //.attr("d", symbol.size(64 * 4));
-        })
-        .on("mouseout", function(event, d) {
-          tooltip.transition()
-            .duration(500)
-            .style("opacity", 0);
-
-          d3.select(this)
-              //.attr("fill", colorScale(d.cluster))
-              //.attr("d", symbol.size(64));
-        });
+        )
+        let currentSource = document.getElementById('vid_source').src
+        //let newSource = "https://p.scdn.co/mp3-preview/80c2898cc15b0f8983d0763b4f68fece6aa151b2?cid=4c0cd32422f74b43b67a28b04fbb295a"
+        let newSource = topSongURL;
+        if(currentSource !== newSource) {
+          document.getElementById('vid_source').src = newSource
+          document.getElementById('vid').load()
+        }
+        
     }
     updateTreemapFromDate(currentDate);          
 
@@ -307,15 +339,25 @@
     playButton
     .on("click", function() {
     var button = d3.select(this);
+    let musicTimeout = -1 
     if (button.text() == "Pause") {
         moving = false;
         clearInterval(timer);
         // timer = 0;
         button.text("Play");
+        clearInterval(musicTimeout)
+        document.getElementById('vid').pause();
+
       } else {
         moving = true;
         timer = setInterval(nextWeek, 2000);
         button.text("Pause");
+        clearInterval(musicTimeout)
+        musicTimeout = setInterval(() => {
+          document.getElementById('vid').load();
+          document.getElementById('vid').play()
+        }, 30000)
+        document.getElementById('vid').play()
       }
       //console.log("Slider moving: " + moving);
     })
