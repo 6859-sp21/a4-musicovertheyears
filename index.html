@@ -49,6 +49,7 @@
   const exampleDataUrl =
     "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_dendrogram_full.json";
   const duration = 2000
+  let musicTimeout = -1
   d3.json(weeksDataUrl).then((weeks) => {
     d3.json(artistsDataUrl).then((artists) => {
     
@@ -62,44 +63,49 @@
     const margin = { top: 10, right: 10, bottom:10, left: 10 };
   
 
-    function aggregateUniqueArtistsForWeek(data) {
+    function aggregateUniqueArtistsForWeek(artistdata) {
       let uniqueArtists = {}
       let topSongURL = "" 
       let topScore = -1;
       let topArtist = ""
       let topPos = 1000
-      for (let i = 0; i < data.length; i++){
-        let artistID = data[i].artistID
-        let score = Math.pow(Math.max(0, (11-data[i].position)), 2) // MODIFY THIS LINE
+      let topSong = ""
+      for (let i = 0; i < artistdata.length; i++){
+        let artistID = artistdata[i].artistID
+        let score = Math.pow(Math.max(0, (11-artistdata[i].position)), 2) // MODIFY THIS LINE
         if ( uniqueArtists.hasOwnProperty(artistID) ) {
           uniqueArtists[artistID]["score"] += score
-          uniqueArtists[artistID]["songs"].push({"songTitle": data[i].song, "songPosition": data[i].position})
+          if(score > 0) console.log(artistdata[i])
+          uniqueArtists[artistID]["songs"].push({"songTitle": artistdata[i].song, "songPosition": artistdata[i].position, "audio": artistdata[i].audio})
         } else {
           if(score > 0) {
             //console.log(artistID)
-            uniqueArtists[artistID] = {"score": score, "songs":[{"songTitle": data[i].song, "songPosition": data[i].position}], "name":artists[artistID].name}
+            uniqueArtists[artistID] = {"score": score, "songs":[{"songTitle": artistdata[i].song, "songPosition": artistdata[i].position, "audio": artistdata[i].audio}], "name":artists[artistID].name}
             //uniqueArtists[] = [{songTitle: data[i]}]
           }
         }
-        if(uniqueArtists[artistID] && (artistID != topArtist && (uniqueArtists[artistID]["score"] > topScore))) {
-          topScore = uniqueArtists[artistID]["score"] 
-          topSongURL = data[i].audio
-          topArtist = artistID
-          topPos = data[i].position
-        } else if(uniqueArtists[artistID] && ((uniqueArtists[artistID]["score"] > topScore))) {
-          if(data[i].position < topPos) {
-            topPos = data[i].position 
-            topSongURL = data[i].audio
-          }
-        }
       }
-      
+      console.log(JSON.stringify(uniqueArtists))
       let uniqueArtistsObjectsArray = []
       
       for (const property in uniqueArtists) {
         uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "songs": uniqueArtists[property]["songs"], "name": uniqueArtists[property]["name"]})
+        if((uniqueArtists[property]["score"] > topScore)) {
+          topScore = uniqueArtists[property]["score"] 
+          topArtist = property
+        } 
       }
-
+      for (let i = 0; i < uniqueArtists[topArtist].songs.length; i++){
+        let thecursong = uniqueArtists[topArtist].songs[i]
+          if(thecursong.songPosition < topPos) {
+            topPos = thecursong.songPosition
+            topSongURL = thecursong.audio
+            topSong = JSON.stringify(thecursong) //thecursong.songTitle
+          }
+        
+      }
+      console.log("Top position: " + topPos)
+      console.log("Top Song: " + topSong)
       return [uniqueArtistsObjectsArray, topSongURL]
     }
 
@@ -301,8 +307,12 @@
         //let newSource = "https://p.scdn.co/mp3-preview/80c2898cc15b0f8983d0763b4f68fece6aa151b2?cid=4c0cd32422f74b43b67a28b04fbb295a"
         let newSource = topSongURL;
         if(currentSource !== newSource) {
+          console.log(newSource)
           document.getElementById('vid_source').src = newSource
+          clearInterval(musicTimeout)
           document.getElementById('vid').load()
+          if(d3.select("#play-button").text() == "Pause")
+              document.getElementById('vid').play()
         }
         
     }
@@ -339,12 +349,11 @@
     playButton
     .on("click", function() {
     var button = d3.select(this);
-    let musicTimeout = -1 
+     
     if (button.text() == "Pause") {
         moving = false;
         clearInterval(timer);
-        // timer = 0;
-        button.text("Play");
+        timer = 0;
         clearInterval(musicTimeout)
         document.getElementById('vid').pause();
 
@@ -357,6 +366,7 @@
           document.getElementById('vid').load();
           document.getElementById('vid').play()
         }, 30000)
+        document.getElementById('vid').load();
         document.getElementById('vid').play()
       }
       //console.log("Slider moving: " + moving);
