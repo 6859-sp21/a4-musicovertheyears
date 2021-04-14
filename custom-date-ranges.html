@@ -6,13 +6,16 @@
   <h1>Weekly top artists from the Billboard Hot 100</h1>
   <p>For each week, we took the songs from that week's Billboard Hot 100 chart and gave each song a score equal to 100 minus its position on the chart. Each artist's score was then calculated as the sum of the scores of their songs on that week's chart.</p>
   <div class="slider-container" style="height: 80px">
-    <button id="play-button">Play</button>
-     
-    <div id="slider">
+    <div style="margin-right: 10px;">
+        <button id="play-button">Play</button>
+        <input type="number" id="slider-interval-jump" min="1" max="520" value="1">
     </div>
+    <div id="slider"></div>
     
   </div>
-  
+  <audio id="vid">
+    <source src="https://p.scdn.co/mp3-preview/25eb644e3ec8a11d0ad4876e266e56a9174b91fe?cid=4c0cd32422f74b43b67a28b04fbb295a" type="audio/mp3" id="vid_source" />
+  </audio>
   <div id="my_dataviz" style="height: calc(100% - 200px)"></div>
 </body>
 <style> /* set the CSS */
@@ -47,6 +50,7 @@
   const exampleDataUrl =
     "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_dendrogram_full.json";
   const duration = 2000
+  let musicTimeout = -1
   d3.json(weeksDataUrl).then((weeks) => {
     d3.json(artistsDataUrl).then((artists) => {
     
@@ -108,12 +112,15 @@
                 }
 
                 if ( uniqueSongs.hasOwnProperty(data[i].song) ) {
-                    uniqueSongs[data[i].song] += score
+                    uniqueSongs[data[i].song]["score"] += score
                 } else {
                     if(score > 0) {
-                        uniqueSongs[data[i].song] = score
+                        uniqueSongs[data[i].song] = {}
+                        uniqueSongs[data[i].song]["score"] = score
+                        uniqueSongs[data[i].song]["audio"] = data[i].audio
                     }
                 }
+                
                 
             }
             
@@ -134,7 +141,7 @@
 
         let uniqueSongsObjectsArray = []
         for (const property in uniqueSongs) {
-            uniqueSongsObjectsArray.push({"song":property, "score":uniqueSongs[property]})
+            uniqueSongsObjectsArray.push({"song":property, "score":uniqueSongs[property]["score"], "audio":uniqueSongs[property]["audio"]})
         }
 
         return [uniqueArtistsObjectsArray, uniqueSongsObjectsArray]
@@ -160,6 +167,7 @@
           }
       )
       //console.log(uniqueSongs)
+      var topSongURL = uniqueSongs[0].audio
       
 
       treeData = {"children": uniqueArtists,"name":"tree"}
@@ -333,6 +341,17 @@
               .remove())   
           }       
         )
+        let currentSource = document.getElementById('vid_source').src
+        //let newSource = "https://p.scdn.co/mp3-preview/80c2898cc15b0f8983d0763b4f68fece6aa151b2?cid=4c0cd32422f74b43b67a28b04fbb295a"
+        let newSource = topSongURL;
+        if(currentSource !== newSource) {
+          //console.log(newSource)
+          document.getElementById('vid_source').src = newSource
+          clearInterval(musicTimeout)
+          document.getElementById('vid').load()
+          if(d3.select("#play-button").text() == "Pause")
+              document.getElementById('vid').play()
+        }
         
         
     }
@@ -379,29 +398,31 @@
             clearInterval(timer);
             timer = 0;
             button.text("Play")
-            // clearInterval(musicTimeout)
-            // document.getElementById('vid').pause();
+            clearInterval(musicTimeout)
+            document.getElementById('vid').pause();
         } else {
             moving = true;
             timer = setInterval(nextWeek, 2000);
             button.text("Pause");
-            // clearInterval(musicTimeout)
-            // musicTimeout = setInterval(() => {
-            // document.getElementById('vid').load();
-            // document.getElementById('vid').play()
-            // }, 30000)
-            // document.getElementById('vid').load();
-            // document.getElementById('vid').play()
+            clearInterval(musicTimeout)
+            musicTimeout = setInterval(() => {
+            document.getElementById('vid').load();
+            document.getElementById('vid').play()
+            }, 30000)
+            document.getElementById('vid').load();
+            document.getElementById('vid').play()
         }
-        console.log("Slider moving: " + moving);
+        
     })
 
     function nextWeek() {
         //console.log(currentDate)
-        let nextStartDate = new Date((new Date(currentDates[0]).getTime()) + 7*24*60*60*1000);
+        let sliderIntervalJump = document.getElementById('slider-interval-jump').value
+        console.log(sliderIntervalJump)
+        let nextStartDate = new Date((new Date(currentDates[0]).getTime()) + 7*24*60*60*1000*sliderIntervalJump);
         // make sure right day of week 
         nextStartDate.setDate(nextStartDate.getDate() + (6 - nextStartDate.getDay()))
-        let nextEndDate = new Date((new Date(currentDates[1]).getTime()) + 7*24*60*60*1000);
+        let nextEndDate = new Date((new Date(currentDates[1]).getTime()) + 7*24*60*60*1000*sliderIntervalJump);
         // make sure right day of week 
         nextEndDate.setDate(nextEndDate.getDate() + (6 - nextEndDate.getDay()))
         //console.log(val.getDay())
@@ -410,7 +431,7 @@
             //nextStartDate = d3.min(dateRange);
             
             clearInterval(timer);
-            playButton.text("Play");
+            //playButton.text("Play");
             //console.log("Slider moving: " + moving);
         } else {
             slider.value([nextStartDate, nextEndDate])
