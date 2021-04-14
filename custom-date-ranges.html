@@ -1,0 +1,353 @@
+<!DOCTYPE html style="height: 100%">
+<meta charset="utf-8" />
+
+<link rel="stylesheet" href="./style.css">
+<body>
+  <h1>Weekly top artists from the Billboard Hot 100</h1>
+  <p>For each week, we took the songs from that week's Billboard Hot 100 chart and gave each song a score equal to 100 minus its position on the chart. Each artist's score was then calculated as the sum of the scores of their songs on that week's chart.</p>
+  <div class="slider-container" style="height: 80px">
+     
+     
+    <div id="slider">
+    </div>
+    
+  </div>
+  <audio id="vid">
+    <source src="https://p.scdn.co/mp3-preview/25eb644e3ec8a11d0ad4876e266e56a9174b91fe?cid=4c0cd32422f74b43b67a28b04fbb295a" type="audio/mp3" id="vid_source" />
+  </audio>
+  <div id="my_dataviz" style="height: calc(100% - 200px)"></div>
+</body>
+<style> /* set the CSS */
+  div.tooltip {
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue; 
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 5;
+    font-size: large;
+  }
+  .axis text,
+  .slider text {
+    font-size: 11px;
+  }
+  
+</style>
+<script src="https://d3js.org/d3.v6.js"></script>
+<script src="https://unpkg.com/d3-simple-slider"></script>
+
+<script type="module">
+  const weeksDataUrl =
+    "https://raw.githubusercontent.com/6859-sp21/a4-musicovertheyears/main/weeks2010.json";
+  const artistsDataUrl =
+    "https://raw.githubusercontent.com/6859-sp21/a4-musicovertheyears/main/artists2010.json";
+  const exampleDataUrl =
+    "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_dendrogram_full.json";
+  const duration = 2000
+  d3.json(weeksDataUrl).then((weeks) => {
+    d3.json(artistsDataUrl).then((artists) => {
+    
+
+    
+    // var tooltip = d3.select("#my_dataviz").append("div")
+    //     .attr("class", "tooltip")
+    //     .style("opacity", 0);
+
+    // Setting up variables that describe our chart's space.
+    const margin = { top: 10, right: 10, bottom:10, left: 10 };
+  
+
+    function aggregateUniqueArtistsForWeek(data) {
+      let uniqueArtists = {}
+      let topSongURL = "" 
+      let topScore = -1;
+      let topArtist = ""
+      let topPos = 1000
+      for (let i = 0; i < data.length; i++){
+        let artistID = data[i].artistID
+        let score = Math.pow(Math.max(0, (11-data[i].position)), 2) // MODIFY THIS LINE
+        if ( uniqueArtists.hasOwnProperty(artistID) ) {
+          uniqueArtists[artistID]["score"] += score
+          uniqueArtists[artistID]["songs"].push({"songTitle": data[i].song, "songPosition": data[i].position})
+        } else {
+          if(score > 0) {
+            //console.log(artistID)
+            uniqueArtists[artistID] = {"score": score, "songs":[{"songTitle": data[i].song, "songPosition": data[i].position}], "name":artists[artistID].name}
+            //uniqueArtists[] = [{songTitle: data[i]}]
+          }
+        }
+        if(uniqueArtists[artistID] && (artistID != topArtist && (uniqueArtists[artistID]["score"] > topScore))) {
+          topScore = uniqueArtists[artistID]["score"] 
+          topSongURL = data[i].audio
+          topArtist = artistID
+          topPos = data[i].position
+        } else if(uniqueArtists[artistID] && ((uniqueArtists[artistID]["score"] > topScore))) {
+          if(data[i].position < topPos) {
+            topPos = data[i].position 
+            topSongURL = data[i].audio
+          }
+        }
+      }
+      
+      let uniqueArtistsObjectsArray = []
+      
+      for (const property in uniqueArtists) {
+        uniqueArtistsObjectsArray.push({"artistID": property, "score": uniqueArtists[property]["score"], "songs": uniqueArtists[property]["songs"], "name": uniqueArtists[property]["name"]})
+      }
+
+      return [uniqueArtistsObjectsArray, topSongURL]
+    }
+
+    // append the svg object to the body of the page
+    var svg = d3
+      .select("#my_dataviz")
+      .append("svg")
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var currentDates = ["1/1/2011", "1/7/2011"]
+    var treeData = {"children": [],"name":"tree"}
+   
+    // Here the size of each leave is given in the 'score' field in input data
+    var displayedArtists = []
+    var root;
+
+    function updateTreemapFromDate(date) {
+      currentDates[0] = date 
+      var data = weeks[date]
+      var res = aggregateUniqueArtistsForWeek(data.artists)
+      var uniqueArtists = res[0] 
+      var topSongURL = res[1]
+
+      treeData = {"children": uniqueArtists,"name":"tree"}
+      // Here the size of each leave is given in the 'score' field in input data
+      root = d3.hierarchy(treeData).sum(function(d){
+          return d.score
+      }).sort(
+        function(a,b){
+          return b.data.score - a.data.score
+        }
+      ) 
+      //console.log([window.innerWidth, window.innerHeight - 100])
+      const width = window.innerWidth - margin.left - margin.right -  (25*2);
+      const height = window.innerHeight - margin.top - margin.bottom - 200 - (25*2);
+      d3.treemap()
+        .tile(d3.treemapResquarify)
+        .size([width, height])
+        .padding(2)
+        (root) 
+      displayedArtists = root.children 
+     // console.log(displayedArtists)
+
+      let image = svg
+        .selectAll('g')
+        .data(displayedArtists, function(d, i) { /*console.log(d.data);*/ return d.data.artistID })
+        .join(
+          enter => {
+            // G IS THE GROUP OF IMAGE AND TEXT/RECTANGLE
+            let g = enter.append('g').attr("overflow", "hidden");
+            g.call(enter => enter.transition().duration(duration)
+            .attr('transform', function (d) { 
+              return "translate(" + d.x0 + "," + d.y0 + ")"
+            }))
+            // THE IMAGE
+            g.append("svg:image")
+              .attr('xlink:href', function (d) { let arr = artists[d.data.artistID].images; return arr[0] ? arr[0].url : ""})
+              .attr("preserveAspectRatio", "xMinYMin slice")
+              .attr('x', 0)
+              .attr('y', 0)
+              .call(enter => enter.transition().duration(duration)
+              .attr('width', function (d) { return d.x1 - d.x0; })
+              .attr('height', function (d) { return d.y1 - d.y0; }))
+              // .on("mouseover", function(event, d) {
+          //console.log(d.data)
+          // tooltip.transition()
+          //   .duration(200)
+          //   .style("opacity", 1);
+          // tooltip.html(d.data.name +
+          //   "" + 
+          //   d.data.songs.map((song, i) => {
+          //     return `<br/><br/>#${song.songPosition}: ${song.songTitle}`
+          //   }))
+          //   .style("left", (event.pageX) + "px")
+          //   //.style("background", colorScale(d.cluster))
+          //   .style("top", (event.pageY - 28) + "px")
+            
+          // d3.select(this)
+          //   .attr("fill", "black")
+            //.attr("d", symbol.size(64 * 4));
+        // })
+        // .on("mouseout", function(event, d) {
+        //   tooltip.transition()
+        //     .duration(500)
+        //     .style("opacity", 0);
+
+          // d3.select(this)
+              //.attr("fill", colorScale(d.cluster))
+              //.attr("d", symbol.size(64));
+        // });
+              // THE RECT
+           let rect =  g.append('rect')
+              .attr("fill", "#000000")
+              .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "20%"
+                            })
+              
+              
+            rect.call(enter => enter.transition()
+               .attr('width', 0)
+              .attr('height', 0)
+              .duration(duration)
+              .attr('width', function (d) { return d.x1-d.x0; })
+              .attr('height', 30))
+           
+              
+              
+              // THE TEXT
+            g.append('text')
+              .attr("x", function (d) { return 10; })
+              .attr("y", function (d) { return 20; })
+              .attr("font-size", "24px")
+              .attr("fill", "white")
+              .text(function(d) {return artists[d.data.artistID].name})
+              .call(enter => enter.transition()
+              .attr("opacity", "0%")
+              .delay(duration/2-500).duration(duration/2)
+              .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "100%"
+              })
+              
+              )
+             
+              
+
+            }
+              ,
+              
+
+          update => 
+            update
+              .call(update => update.transition().duration(duration)
+                .attr('transform', function (d) { 
+              return "translate(" + d.x0 + "," + d.y0 + ")"
+            }))
+
+            .call(update => update
+            .select("image")
+            .transition().duration(duration)
+            .attr('width', function (d) { return d.x1 - d.x0; })
+            .attr('height', function (d) { return d.y1 - d.y0; }))
+
+            .call(update => update
+            .select("rect")
+            .transition().duration(duration)
+            .attr('width', function (d) { return d.x1 - d.x0; })
+            .attr('height', 30)
+            .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "20%"
+              })
+            )
+            .select("text")
+           // .attr("opacity", "0%")
+           .call(update => update
+            .transition().duration(duration)
+            .attr("opacity", function(d) {
+                if(d.y1-d.y0 < 60) {
+                  return "0%"
+                }
+                return "100%"
+              })
+            )
+            
+
+               // .attr('x', function (d) { return d.x0; })
+               // .attr('y', function (d) { return d.y0; })),
+          ,
+          
+          exit => {
+              exit.select("image").call(exit1 => exit1.transition().duration(duration)
+              .attr('width', 0)
+              .attr('height', 0))
+
+              exit.select("rect").call(exit1 => exit1.transition().duration(duration)
+              .attr('width', 0)
+              .attr('height', 0)
+              .attr('opacity', "0%"))
+
+              exit.select("text").call(exit1 => exit1.transition().duration(duration)
+              .attr('opacity', "0%"))
+           
+              exit.call(exit1 => exit1.transition().delay(duration)
+              .remove())   
+          }       
+        )
+        let currentSource = document.getElementById('vid_source').src
+        //let newSource = "https://p.scdn.co/mp3-preview/80c2898cc15b0f8983d0763b4f68fece6aa151b2?cid=4c0cd32422f74b43b67a28b04fbb295a"
+        let newSource = topSongURL;
+        if(currentSource !== newSource) {
+          document.getElementById('vid_source').src = newSource
+          document.getElementById('vid').load()
+        }
+        
+    }
+    updateTreemapFromDate(currentDates[0]);          
+
+    const dateRange = [...Array(474).keys()].map(function (d) {
+      return new Date(2011, 0, 1+(d*7));
+    });
+    const defaultValue = dateRange.slice(0,2)
+   
+    let myWidth =  window.innerWidth - (margin.left + margin.right) - (30)- (25*2) 
+  
+    var slider = d3
+      .sliderBottom()
+      .min(d3.min(dateRange))
+      .max(d3.max(dateRange))
+      //.step(1000 * 60 * 60 * 24 * 365)
+      .step(1000 * 60 * 60 * 24 * 7)
+      .width(myWidth - 100)
+      .tickFormat(d3.timeFormat('%d %b %Y'))
+      .ticks(7)
+      //.default(0.015);
+      .default(defaultValue)
+      .fill('blue')
+      .on("onchange", (val) => {
+        var newStartDate = new Date(val[0])
+        var newEndDate = new Date(val[1])
+        var newDate = String(newStartDate.getMonth()+1) + "/" + String(newStartDate.getDate()) + "/" + String(newStartDate.getFullYear())
+        updateTreemapFromDate(newDate)
+      })
+
+    
+
+    
+
+
+  d3.select("#slider")
+    .append("svg")
+    .attr("width", myWidth)
+    .attr("height", 100)
+    .append("g")
+    .attr("transform", "translate(30,30)")
+    .call(slider);
+
+    
+  });
+});
+</script>
