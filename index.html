@@ -24,7 +24,7 @@
   <audio id="vid">
     <source src="https://p.scdn.co/mp3-preview/25eb644e3ec8a11d0ad4876e266e56a9174b91fe?cid=4c0cd32422f74b43b67a28b04fbb295a" type="audio/mp3" id="vid_source" />
   </audio>
-  <div id="my_dataviz" style="height: calc(100% - 200px)"></div>
+  <div id="my_dataviz" style="height: calc(100% - 300px)"></div>
 </body>
 <script src="https://d3js.org/d3.v6.js"></script>
 <script src="https://unpkg.com/d3-simple-slider"></script>
@@ -173,8 +173,8 @@
         }
       ) 
       //console.log([window.innerWidth, window.innerHeight - 100])
-      const width = window.innerWidth - margin.left - margin.right -  (25*2);
-      const height = window.innerHeight - margin.top - margin.bottom - 200 - (25*2);
+      const width = window.innerWidth - margin.left - margin.right - 60 - (25*2);
+      const height = window.innerHeight - margin.top - margin.bottom - 300 - (25*2);
       d3.treemap()
         .tile(d3.treemapResquarify)
         .size([width, height])
@@ -460,7 +460,7 @@
   d3.select("#slider")
     .append("svg")
     .attr("width", myWidth)
-    .attr("height", 100)
+    .attr("height", 80)
     .append("g")
     .attr("transform", "translate(30,30)")
     .call(slider);
